@@ -1,0 +1,197 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}{{user}}{% endblock title %}
+
+{% block content %}
+<h4 class="mt-4 mb-5 border-bottom"><i class="bi bi-house-fill me-3"></i>ダッシュボード</h4>
+<h5 class="mt-3 mb-5">{{user.nickname}} さん</h5>
+
+<div class="d-flex flex-wrap justify-content-evenly">
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><a href="{{ user.default_learning_url }}" class="text-white" style="text-decoration:none;" ><i class="bi bi-play-btn-fill me-3"></i>ラーニング</a></h5>
+            <p class="card-text">
+                効率よく記憶定着を図るために最適な復習管理を学習します。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{{ user.default_learning_url }}" class="btn btn-warning btn-sm">
+                <i class="bi bi-play-btn-fill me-3"></i>ラーニング
+            </a>
+        </div>
+    </div>
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-stopwatch me-3"></i>復習管理</h5>
+            <p class="card-text">
+                復習管理は問題と解答の組、その現在の定着度、今後の復習スケジュールなどの管理単位です。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'cms:list_rm_set'%}" class="btn btn-primary btn-sm">
+                <i class="bi bi-stopwatch me-3"></i>復習管理一覧
+            </a>
+        </div>
+    </div>
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-card-text me-3"></i>カード</h5>
+            <p class="card-text">
+                カードはコンテンツを複数の項目に分けて記載したもので、復習管理の問題や解答の元になります。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'cms:list_cards'%}" class="btn btn-primary btn-sm">
+                <i class="bi bi-card-text me-3"></i>カード一覧
+            </a>
+        </div>
+    </div>
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-flag-fill me-3"></i>プロジェクト</h5>
+            <p class="card-text">
+                カードは１つのプロジェクトに属することができます。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'cms:list_projects'%}" class="btn btn-primary btn-sm">
+                <i class="bi bi-flag-fill me-3"></i>プロジェクト一覧
+            </a>
+        </div>
+    </div>
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-tag-fill me-3"></i>タグ</h5>
+            <p class="card-text">
+                カードには複数のタグを付けることができます。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'cms:list_tags'%}" class="btn btn-primary btn-sm">
+                <i class="bi bi-tag-fill me-3"></i>タグ一覧
+            </a>
+        </div>
+    </div>
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><i class="material-icons md-18 me-2" style="position:relative;top:3px">manage_accounts</i>ユーザ設定</h5>
+            <p class="card-text">
+                {{user.nickname}} さんの設定を変更できます。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'users:edit_userconf'%}" class="btn btn-primary btn-sm">
+                <i class="material-icons md-18 me-2" style="position:relative;top:3px">manage_accounts</i>ユーザ設定
+            </a>
+        </div>
+    </div>
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-person-circle me-3"></i>あなたの公開ページ</h5>
+            <p class="card-text">
+                {{user.nickname}} さんの公開ページです。
+                公開中のカード、プロジェクト、タグが表示され、誰でも見ることができます。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'cms:show_user' tuser_id=user.id%}" class="btn btn-primary btn-sm">
+                <i class="bi bi-person-circle me-3"></i>公開ページ
+            </a>
+        </div>
+    </div>
+    <div class="card text-white bg-secondary m-3 col-md-4" style="max-width: 14rem;">
+        <div class="card-body">
+            <h5 class="card-title"><i class="material-icons md-24 me-2" style="position:relative;top:3px">question_mark</i>使い方</h5>
+            <p class="card-text">
+                Memory Crow の使い方の説明です。
+            </p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'cms:how_to_use'%}" class="btn btn-primary btn-sm"><i class="material-icons md-18 me-2" style="position:relative;top:3px">question_mark</i>使い方</a>
+        </div>
+    </div>
+</div>
+
+
+<div class="accordion mt-5 mb-5" id="user_detail_accordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading_cards">
+            <button class="accordion-button bg-dark text-muted" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#collapse_cards"
+                aria-expanded="true" aria-controls="collapse_cards">
+                あなたのカード
+            </button>
+        </h2>
+        <div id="collapse_cards" class="accordion-collapse collapse show bg-dark text-muted" aria-labelledby="heading_cards"
+            data-bs-parent="#user_detail_accordion">
+            <div class="accordion-body">
+                <div id="card_list_wrapper"></div>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading_projects">
+            <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#collapse_projects"
+                aria-expanded="true" aria-controls="collapse_projects">
+                あなたのプロジェクト
+            </button>
+        </h2>
+        <div id="collapse_projects" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_projects"
+            data-bs-parent="#user_detail_accordion">
+            <div class="accordion-body">
+                <div id="project_list_wrapper"></div>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading_tags">
+            <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#collapse_tags"
+                aria-expanded="true" aria-controls="collapse_tags">
+                あなたのユーザタグ
+            </button>
+        </h2>
+        <div id="collapse_tags" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_tags"
+            data-bs-parent="#user_detail_accordion">
+            <div class="accordion-body">
+                <div id="tag_list_wrapper"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+{% endblock content %}
+
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(() => {
+
+    $("#dialog_container").html(get_confirmation_dialog_html());
+
+    init_card_list(filters = {
+        limit: 10,
+    });
+
+    init_project_list(filters = {
+        limit:10,
+    });
+
+    init_tag_list(filters = {
+        limit:10,
+    });
+})
+
+var jump_to_next;
+
+</script>
+{% endblock %}

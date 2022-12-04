@@ -1,0 +1,128 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}プロジェクト: {{ project.name | truncatechars:20 }}{% endblock title %}
+
+{% block content %}
+    <h4 class="mt-4 mb border-bottom"><i class="bi bi-flag-fill me-3"></i><span class="me-3">{{ project.name | truncatechars:20 }}</span><small class="text-muted ml-3">{{project.user.nickname | truncatechars:20 }}{% if project.user == user %} (あなた) {% endif %}</small></h4>
+    <div class="text-muted"><span class="top_path_span"></span></div>
+    
+    <div class="accordion mt-5 mb-5" id="project_detail_accordion">
+        <div id="project_detail_main" class="accordion-item">
+            <h2 class="accordion-header" id="heading_attrs">
+                <button class="accordion-button bg-dark text-muted" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse_attrs"
+                    aria-expanded="true" aria-controls="collapse_attrs">
+                    <i class="bi bi-flag-fill me-3"></i><span class="me-3">{{project.name}}</span>の詳細
+                </button>
+            </h2>
+            <div id="collapse_attrs" class="accordion-collapse collapse show bg-dark text-muted" aria-labelledby="heading_attrs"
+                data-bs-parent="#project_detail_accordion">
+                <div class="accordion-body">
+                    <div id="project_table_container" class="container project_table_container">
+                        <div class="">説明</div>
+                        <div class="">基本情報</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading_cards">
+                <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse_cards"
+                    aria-expanded="true" aria-controls="collapse_cards">
+                    <i class="bi bi-flag-fill me-3"></i><span class="me-3">{{project.name}}</span>のカード
+                </button>
+            </h2>
+            <div id="collapse_cards" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_cards"
+                data-bs-parent="#project_detail_accordion">
+                <div class="accordion-body">
+                    <div id="card_list_wrapper"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading_decendants">
+                <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse_decendants"
+                    aria-expanded="true" aria-controls="collapse_decendants">
+                    <i class="bi bi-flag-fill me-3"></i><span class="me-3">{{project.name}}</span>の子孫プロジェクト
+                </button>
+            </h2>
+            <div id="collapse_decendants" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_decendants"
+                data-bs-parent="#project_detail_accordion">
+                <div class="accordion-body">
+                    <div id="project_list_wrapper"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(() => {
+    
+    let project_id = "{{ project_id | safe }}";
+    let project = JSON.parse('{{ project_json | safe}}'.slice(1,-1));
+
+    $(".top_path_span").html(get_path_html_from_objects(project.path_like_objects_safe))
+
+    jump_to_next = () => {
+        window.location.href = "{% url 'cms:list_projects' %}";
+    }
+
+    let container_id = 'project_detail_main';
+
+    $(`#${container_id} .dialog_container`).html(get_confirmation_dialog_html());
+
+    let _row = get_project_data(project);
+    _row.unshift(null); // チェックボックス用
+    
+    let columns = get_project_columns(container_id, handle_html = null, 
+        on_delete_name = "jump_to_next", single_display=true);
+    let row = { 'cells': columns.map((c, i) => { return { 'data': _row[i] } }) };
+    let tbody = columns.slice(1).map((c, i) => {
+        if (!c.formatter) c.formatter = (cell) => cell;
+        let v = c.formatter(_row[i + 1], row);
+        return `
+            <div class="row mb-5">
+                <div class="col-md-4 text-muted">${c.name}</div>
+                <div class="col-md-7 ms-4">${v}</div>
+            </div>
+        `;
+    }).join('');
+
+    $(".project_table_container").html(`
+        <div class="container table-dark table-striped table-hover mt-3 mb-5">
+            ${tbody}
+        </div>
+    `);
+    
+    $('.md_preview_button').click();
+
+    init_project_list(filters = {
+        limit:10,
+        include_descendant_of:project_id,
+        request_user_related_only: false,
+    });
+
+    init_card_list(filters = {
+        limit:10,
+        project:project_id,
+        request_user_related_only: false,
+    });
+})
+
+var jump_to_next;
+
+</script>
+{% endblock %}

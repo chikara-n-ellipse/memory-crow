@@ -1,0 +1,630 @@
+{% extends "cms/base.html" %}
+
+{% load markdown_extras %}
+
+{% block title %}ラーニング{% endblock title %}
+
+{% block content %}
+<h4 class="mt-4 border-bottom"><i class="bi bi-play-btn-fill me-3"></i>ラーニング</h4>
+
+<!-- 学習設定用モーダル -->
+<div class="modal fade" id="lc_modal" tabindex="-1" aria-labelledby="lc_modal_label" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content bg-dark">
+      <div class="modal-header">
+        <h2 class="accordion-header" id="headingOne">
+          問題の取得設定
+        </h2>
+      </div>
+      <div class="modal-body">
+        <!-- プロジェクト -->
+        <div class="row mb-1 mt-3">
+          <label class="text-muted col-md-4" for="{{ lc_form.project.auto_id }}">
+            {{ lc_form.project.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ .help_text}}"></i>
+          </label>
+          <div class="col-md-6">
+            <select id="project_select" name="project" class="lc_project project_select select2-hidden-accessible" data-select2-id="select2-data-id_project" tabindex="-1" aria-hidden="true">
+              {% if initial_project %}<option value="{{ initial_project.id}}">{{ initial_project.path }}</option>{% endif %}
+            </select>
+            <div id="project_error" class="invalid-feedback"></div>
+          </div>
+        </div>
+
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.with_project_descendants.auto_id }}">
+            {{ lc_form.with_project_descendants.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.with_project_descendants.help_text }}"></i>
+          </label>
+          <div class="col-md-4">
+            {{ lc_form.with_project_descendants }}
+            {{ lc_form.with_project_descendants.errors }}
+          </div>
+        </div>
+
+        <!-- タグ -->
+        <div class="row mb-1">
+          <label class="text-muted col-md-4" for="{{ lc_form.tags.auto_id }}">
+            {{ lc_form.tags.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ .help_text}}"></i>
+          </label>
+          <div class="col-md-6">
+            <select id="tag_select" name="tags" class="tag_select lc_tags select2-hidden-accessible" data-select2-id="select2-data-tag_select" tabindex="-1" aria-hidden="true" multiple>
+              {% for tag in initial_tags %}
+                <option value="{{ tag.id}}" selected>{{ tag.path }}</option>
+              {% endfor %}
+            </select>
+            <div id="tags_error" class="invalid-feedback"></div>
+          </div>
+        </div>
+
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.with_tag_descendants.auto_id }}">
+            {{ lc_form.with_tag_descendants.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.with_tag_descendants.help_text }}"></i>
+          </label>
+          <div class="col-md-4">
+            {{ lc_form.with_tag_descendants }}
+            {{ lc_form.with_tag_descendants.errors }}
+          </div>
+        </div>
+
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.random.auto_id }}">
+            {{ lc_form.random.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.random.help_text }}"></i>
+          </label>
+          <div class="col-md-4">
+            {{ lc_form.random }}
+            {{ lc_form.random.errors }}
+          </div>
+        </div>
+        <div class="row mb-2">
+          <label class="text-muted col-md-4" for="{{ lc_form.urgency_gte.auto_id }}">
+            {{ lc_form.urgency_gte.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.urgency_gte.help_text}}"></i>
+          </label>
+          <div class="col-md-4 mb-2">
+            {{ lc_form.urgency_gte }}
+            {{ lc_form.urgency_gte.errors }}
+          </div>
+        </div>
+        <div class="mb-5 text-muted"><small><em>※緊急度 0 のカードを学習しても定着レベルは上がりません。</em></small></div>
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.deprms_al_gte.auto_id }}">
+            {{ lc_form.deprms_al_gte.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.deprms_al_gte.help_text}}"></i>
+          </label>
+          <div class="col-md-4 mb-5">
+            {{ lc_form.deprms_al_gte }}
+            {{ lc_form.deprms_al_gte.errors }}
+          </div>
+        </div>
+
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.importance_gte.auto_id }}">
+            {{ lc_form.importance_gte.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.importance_gte.help_text}}"></i>
+          </label>
+          <div class="col-md-4">
+            {{ lc_form.importance_gte }}
+            {{ lc_form.importance_gte.errors }}
+          </div>
+        </div>
+
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.limit.auto_id }}">
+            {{ lc_form.limit.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.limit.help_text }}"></i>
+          </label>
+          <div class="col-md-4">
+            {{ lc_form.limit }}
+            {{ lc_form.limit.errors }}
+          </div>
+        </div>
+
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.activeness.auto_id }}">
+            {{ lc_form.activeness.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+              data-bs-placement="bottom" title="{{ lc_form.activeness.help_text }}"></i>
+          </label>
+          <div class="col-md-4">
+            {{ lc_form.activeness }}
+            {{ lc_form.activeness.errors }}
+          </div>
+        </div>
+
+        <div class="row mb-5">
+          <label class="text-muted col-md-4" for="{{ lc_form.new_hot_warm.auto_id }}">
+            {{ lc_form.new_hot_warm.label }}
+            <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" title="{{ lc_form.new_hot_warm.help_text }}"></i>
+          </label>
+          <div class="col-md-4">
+            {{ lc_form.new_hot_warm }}
+            {{ lc_form.new_hot_warm.errors }}
+          </div>
+        </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn_lc_apply btn btn-primary m-2 mt-4 w-100" type="button">適用</button>
+        <button type="button" class="btn_lc_close btn btn-secondary m-2 mt-4" type="button"
+          data-bs-dismiss="modal">閉じる</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-start text-muted mb-4">
+
+  <!-- 取得設定ラベル -->
+  <button type="button" class="btn btn-link me-3" data-bs-toggle="modal" title="取得設定" data-bs-target="#lc_modal">
+    <i class="bi bi-cloud-download"></i>
+  </button>
+  <div class="label_lc_urgency_gte p-2 text-nowrap"><i class="bi bi-alarm"></i> ≧ {{ lc.urgency_gte }}</div>
+  <div class="label_lc_importance_gte p-2 text-nowrap"><i class="bi bi-exclamation-triangle"></i> ≧ {{ lc.importance_gte }}</div>
+  <div class="label_lc_limit text-muted p-2 text-nowrap"><i class="bi bi-cloud-download"></i> {{ lc.limit }}</div>
+  <div class="label_lc_activeness text-muted p-2 text-nowrap">
+    {% if lc.activeness == 0 %}active & suspended{% elif lc.activeness == 1 %}active only{% elif lc.activeness == 2 %}suspended only{% endif %}
+  </div>
+  {% if lc.random %}<div class="label_lc_random text-muted p-2 text-nowrap"> <i class="bi bi-shuffle"></i></div>{% endif %}
+  <div class="label_lc_deprms_al_gte text-muted p-2 text-nowrap">dep AL ≧ {{ lc.deprms_al_gte }}</div>
+  <div class="label_lc_new_hot_warm text-muted p-2 text-nowrap">{{ lc.new_hot_warm }}</div>
+  <div class="me-5"></div>
+
+  <!-- 表示・判定の設定 -->
+  <div class="ms-auto d-flex flex-wrap">
+    <button type="button" class=" btn btn-link me-2" data-bs-toggle="collapse"  
+        href="#display_and_judge_conf_form" role="button" aria-expanded="false" aria-controls="display_and_judge_conf_form" title="display and judge settings">
+      <i class="material-icons md-18">settings</i>
+    </button>
+    <div class=" me-2" title="max width">
+      <input id="max_width_switch" class="btn-check" type="checkbox" autocomplete="off">
+      <label class="btn text-muted" for="max_width_switch"><i class="bi bi-arrows-fullscreen"></i></label>
+    </div>
+    <div class=" me-2" title="hide header">
+      <input id="hide_header_switch" class="btn-check" type="checkbox">
+      <label class="btn text-muted" for="hide_header_switch"><i class="material-icons md-18">subtitles_off</i></label>
+    </div>
+    <div class=" me-2" title="auto read aloud">
+      <input id="auto_read_aloud_switch" class="btn-check" type="checkbox">
+      <label class="btn text-muted" for="auto_read_aloud_switch"><i class="bi bi-megaphone"></i></label>
+    </div>
+    <div class="me-2" title="save user default setting">
+      <button id="save_user_default_setting_button" class="btn btn-link text-muted"><i class="bi bi-save"></i></button>
+    </div>
+  </div>
+</div>
+
+<div id="display_and_judge_conf_form" class="display_and_judge_conf_form collapse border border-primary p-5 m-5">
+  <form>
+    <h6>Hotカードの待ち時間指定</h6>
+    <em class="text-muted mb-3">Hotカードの待ち時間を分単位の整数 (1以上、1440以下) で入力してください。数字は６つまで入力できます。</em>
+    <div class="d-flex flex-wrap mb-3" style="max-width:10em;">
+      <input type="text" class="wait_durations_input wait_durations_input_0 form-control" 
+          placeholder="" aria-label="wait durations" 
+          aria-describedby="wait_durations_input_label" type="number" step="1" min="1" max="1440" value="1">
+      <input type="text" class="wait_durations_input wait_durations_input_1 form-control" 
+          placeholder="" aria-label="wait durations" 
+          aria-describedby="wait_durations_input_label" type="number" step="1" min="1" max="1440" value="10">
+      <input type="text" class="wait_durations_input wait_durations_input_2 form-control" 
+          placeholder="" aria-label="wait durations" 
+          aria-describedby="wait_durations_input_label" type="number" step="1" min="1" max="1440" value="">
+      <input type="text" class="wait_durations_input wait_durations_input_3 form-control" 
+          placeholder="" aria-label="wait durations" 
+          aria-describedby="wait_durations_input_label" type="number" step="1" min="1" max="1440" value="">
+      <input type="text" class="wait_durations_input wait_durations_input_4 form-control" 
+          placeholder="" aria-label="wait durations" 
+          aria-describedby="wait_durations_input_label" type="number" step="1" min="1" max="1440" value="">
+      <input type="text" class="wait_durations_input wait_durations_input_5 form-control" 
+          placeholder="" aria-label="wait durations" 
+          aria-describedby="wait_durations_input_label" type="number" step="1" min="1" max="1440" value="">
+    </div>
+    <h6>自動読み上げの対象フィールド番号指定</h6>
+    <em class="text-muted mb-3">自動読み上げを行うフィールド番号を選択してください。</em>
+    <select id="auto_read_aloud_field_nums_select" class="mb-3" multiple aria-label="Default select example">
+      <option value="0"> field 0 </option>
+      <option value="1"> field 1 </option>
+      <option value="2"> field 2 </option>
+      <option value="3"> field 3 </option>
+      <option value="4"> field 4 </option>
+    </select>
+    <div class="mb-5"></div>
+    <div class="d-flex">
+      <button id="apply_jd_settings_button" type="button" class="btn btn-primary flex-fill mb-3">適用</button>
+    </div>
+  </form>
+</div>
+
+<!-- プロジェクト・タグ -->
+<div class="label_lc_box col-lg-4 d-flex flex-wrap align-items-center text-muted">
+  {% if project_id %}
+  <div class="label_lc_project label_lc_project_{{ project_id }}" data-project_id="{{ project_id }}">
+  </div>
+  {% endif %}
+  {% for tag_id in tag_ids %}
+  <div class="label_lc_tag label_lc_tag_{{ tag_id }}" data-tag_id="{{ tag_id }}"></div>
+  {% endfor %}
+</div>
+
+<div class="fs-4 placeholder-glow" style="position:fixed;top:0;left:50%;z-index:1;">残り枚数: <span id="estimated_total_remaining_num" class="placeholder">???</span></div>
+
+<!-- QAボックスエリア -->
+<div id="learn_qa_box_area" class="qa_box_area m-1 p-1">
+
+  <!-- ここにQAボックスが挿入される -->
+  
+</div>
+
+<div class="return_button_container d-flex align-items-center flex-column justify-content-center">
+  <div class="loading_spinner spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
+  </div>
+  <div class="btn_read_qa btn btn-primary btn-lg m-3 d-none">Q&Aを読込む</div>
+</div>
+<div><a href="{% url 'users:user_dashboard' %}" class="btn btn-secondary btn-sm">マイページへ戻る</a></div>
+<div style="height:30em;">
+  <!-- 最終復習管理を上部に表示できるようスペースをいれる -->
+</div>
+
+<div id="fadeLayer"></div>
+
+
+
+{% endblock content %}
+
+{% block extra_js %}
+
+
+<script>
+
+const token = '{{user.token}}';
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+const qa_set_displayed = [];
+const qa_set_hidden = [];
+var active_qa_id = null;
+var rc_filters;
+var rm_set_loaded = [];
+var total_count = 0;
+var all_ids_to_learn = [];
+
+const get_wait_durations_from_url = ()=>{
+  const url = new URL(location);
+  let wait_durations = url.searchParams.get("wait_durations");
+  if(wait_durations){
+    return wait_durations.split('-').map(i=>parseInt(i));
+  }else{
+    return [1, 10];
+  }
+}
+
+const get_arafns_from_url = ()=>{
+  const url = new URL(location);
+  let arafns = url.searchParams.get("auto_read_aloud_field_nums");
+  if(arafns){
+    return arafns.split('-').map(i=>parseInt(i));
+  }else{
+    return [0,1,2,3,4]
+  }
+}
+
+
+$(()=>{
+  const project = JSON.parse('{{ project_json | safe}}'.slice(1,-1)); // 無い場合はnullになる。
+  const tags = JSON.parse('{{ tags_json | safe}}'.slice(1,-1)).results; // 無い場合は[]になる。
+
+  const project_id = project ? project.id : null;
+  const tag_ids = tags.map(tag=>tag.id);
+
+  // ダイアログ初期化
+  $(`.dialog_container`).html(get_confirmation_dialog_html());
+
+  $(window).on('beforeunload', function() {
+    window.speechSynthesis.cancel();
+  });
+
+  $("#fadeLayer").on('click', ()=>{
+    $("#fadeLayer").hide();
+  })
+
+  // wait durationsの初期値設定
+  const wait_durations = get_wait_durations_from_url();
+  $(".wait_durations_input").each((i,e)=>{
+    if(i < wait_durations.length){
+      $(e).val(wait_durations[i]);
+    }else{
+      $(e).val('');
+    }
+  })
+
+  // 自動読み上げフィールド番号の初期値設定
+  $("#auto_read_aloud_field_nums_select").select2({
+    placeholder: '選択してください',
+    allowClear: true,
+    dropdownParent: null,
+    multiple: true,
+  })
+
+  $("#auto_read_aloud_field_nums_select").val(get_arafns_from_url()).trigger('change');
+
+  $("#apply_jd_settings_button").on('click', ()=>{
+    if(apply_jd_settings())alert("適用に成功しました。");
+  })
+
+  $(document).bind('click', (e)=>{
+    // 復習管理ボックスの外をクリックした場合にのみアクティブの解除を行う
+    if(!$(e.target).closest('.qa_box').length){
+      activate_qa_box(null);
+    }
+  })
+
+  $(document).keydown((e)=>{
+    const $active_qab = $(".qa_box.active");
+    if($active_qab.length){
+      // アクティブな復習管理があるとき
+      if($active_qab.find(".md_to_html_target_answer_field").is(':hidden')){
+        // 解答表示前
+        if(e.key == "Enter" || e.key == " "){
+          $(".qa_box.active .show_answer_button").click();
+          return false;
+        }
+      }else{
+        // 解答表示後
+        if(e.key == "Enter" || e.key == "o" || e.key == " "){
+          on_judge(active_qa_id, "ok");
+          return false;
+        }else if(e.key == "n"){
+          on_judge(active_qa_id, "ng");
+        }else if(e.key == "s"){
+          on_judge(active_qa_id, "skip_to_tomorrow");
+        }else if(e.key == "w"){
+          on_judge(active_qa_id, "skip_1w");
+        }else if(e.key == "f"){
+          on_judge(active_qa_id, "frozen");
+        }
+      }
+    }
+  });
+  
+  
+  // 学習設定モーダルの初期化
+  init_project_select(dropdown_parent='#lc_modal .modal-body');
+  if(project){
+    const $init_project_select_option = $(`<option value="${project.id}" title="${project.name}" selected></option>`).text(`
+          <div class="m-1">${get_project_badge_html(project, disabled=true)}</div>
+      `)
+    $('.project_select').append($init_project_select_option)
+                        .trigger('change');
+  }
+  
+  init_tag_select(dropdown_parent='#lc_modal .modal-body', multiple=true);
+  tags.forEach(tag=>{
+    const $init_tag_select_option = $(`<option value="${tag.id}" title="${tag.name}" selected></option>`).text(`
+        ${get_tag_badge_html(tag, disabled=true)}
+    `);
+    $('.tag_select').append($init_tag_select_option)
+                    .trigger('change');
+  })
+  
+
+  $(".btn_lc_apply").on("click", ()=>{
+    apply_learn_conf();
+    $('#lc_modal').modal('hide');
+  });
+
+  if (project) {
+    $(".label_lc_project").html(get_project_badge_html(project));
+  }
+
+  tags.map(tag=>{
+    $(`.label_lc_tag_${tag.id}`).html(get_tag_badge_html(tag));
+  })
+  
+  $("#max_width_switch").on('change', ()=>apply_display_conf())
+        .get(0).checked = new URL(location).searchParams.get("max_width_switch") === "true";
+
+  $("#hide_header_switch").on('change', ()=>apply_display_conf())
+        .get(0).checked = new URL(location).searchParams.get("hide_header_switch") === "true";
+  
+  $("#auto_read_aloud_switch").on('change', ()=>apply_display_conf())
+        .get(0).checked = new URL(location).searchParams.get("auto_read_aloud") === "true";
+  
+  $("#save_user_default_setting_button").on('click', ()=>{
+    const res = confirm('現在の設定をユーザのデフォルトとして保存しますか？');
+    if(res){
+      $.ajax({
+          type: 'GET',
+          url: `/api/update_user__default_learning_url?default_learning_url=${encodeURIComponent(location)}`,
+          beforeSend: function (xhr, settings) { xhr.setRequestHeader('Authorization', `Bearer ${token}`); },
+        })
+          .done((data) => {
+            //　成功時
+            alert("ユーザデフォルトの学習設定を更新しました。");
+          })
+          .fail(() => {
+            //　失敗時
+            alert("プロジェクトの読み込みに失敗しました。");
+          })
+    }
+  })
+
+  // 復習管理取得用フィルター
+  rc_filters = {
+    // フィルター一般の設定項目
+    limit: "{{ lc.limit }}",
+    project: project_id,
+    with_project_descendants: "{{ lc.with_project_descendants }}",
+    tags: tag_ids,
+    with_tag_descendants: "{{ lc.with_tag_descendants }}",
+    order_by: ['is_hot', 'absorption_level', 'ingestion_level'],
+    order_dir: ['desc', 'asc', 'asc'],
+
+    // 学習時特有の設定項目
+    importance_gte: "{{ lc.importance_gte }}",
+    activeness: "{{ lc.activeness }}", // デフォルトはアクティブのみ
+    random: bool = "{{ lc.random }}",
+    urgency_gte: "{{ lc.urgency_gte }}",
+    deprms_al_gte: "{{ lc.deprms_al_gte }}",
+    new_hot_warm: "{{ lc.new_hot_warm }}",
+    include_template: false,
+    skip_rm_set_before_postpone_to: true,
+  };
+  
+  // 復習管理読み込みボタンが押されたときの処理
+  $('.btn_read_qa').on('click', ()=>{
+    load_qa_set();
+  });
+
+  // 最初の復習管理読み込み
+  load_qa_set();
+
+});
+
+const load_qa_set = (additional_filters=null)=>{
+  $(".btn_read_qa").hide();
+  $(".loading_spinner").show();
+
+  const url_path = '/api/get_rm_set';
+  let url_queries = {...rc_filters};
+
+  url_queries.excludes = qa_set_displayed.concat(qa_set_hidden).map(qa=>qa.user_rm.id);
+
+  if(additional_filters){
+    url_queries = {...url_queries, ...additional_filters};
+  }
+
+  if (!url_queries.project) delete url_queries.project;
+  if (!url_queries.tags) delete url_queries.tags;
+
+  $.ajax({
+    type: 'GET',
+    url: get_url_from_path_and_queries(url_path, url_queries),
+    contentType: "application/json",
+    beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', 'Bearer {{user.token}}'); },
+  })
+  .done((data)=> {
+    rm_set_loaded = data.results;
+    total_count = data.total_count;
+    all_ids_to_learn = data.all_ids;
+
+    update_estimated_remaining_num_label();
+
+    rm_set_loaded.forEach(rm=>{
+      display_loaded_qa(rm.qa, rm);
+    });
+
+    apply_display_conf();
+
+    $(".btn_read_qa").removeClass('d-none');
+    $(".btn_read_qa").show();
+    $(".loading_spinner").hide();
+  })
+  .fail(function() {
+    alert('error');
+    $(".btn_read_qa").removeClass('d-none');
+    $(".btn_read_qa").show();
+    $(".loading_spinner").hide();
+  });
+}
+
+
+const display_loaded_qa = (qa, rm)=>{
+
+  qa.user_rm = rm;
+  
+  // 既にある復習管理は追加しない
+  if(qa_set_displayed.map(c=>c.id).includes(qa.id)
+    || qa_set_hidden.map(c=>c.id).includes(qa.id)){
+    return;
+  }
+
+  // アクティブ復習管理の後の位置を確認
+  const i_qa_active = qa_set_displayed.findIndex(_qa=>_qa.id===active_qa_id)
+
+  let i = i_qa_active + 1; // アクティブの次のインデクス（アクティブが無い場合は0）で初期化
+
+  const is_hot = (rm)=> rm && rm.absorption_level === 0 && rm.ingestion_level >= 1;
+  const is_new = (rm)=> rm && rm.absorption_level === 0 && rm.ingestion_level === 0;
+
+  while(i < qa_set_displayed.length){
+    
+    let _qa = qa_set_displayed[i];
+
+    if (
+      is_hot(qa.user_rm) && !is_hot(_qa.user_rm)
+      || is_new(qa.user_rm) && !is_hot(_qa.user_rm) && !is_new(_qa.user_rm)
+    )break;
+
+    i++;
+  }
+
+  const $qab = create_qa_box(qa, rm, qa.card, "learn_qa_box_area", {
+    additional_class: 'mx-auto my-5',
+  });
+
+  if(i < qa_set_displayed.length){
+    const _qa = qa_set_displayed[i];
+    const _$qab = $(`#qa_box_${_qa.id}`);
+
+    //i番目の要素の前に挿入
+    $qab.insertBefore(_$qab); //　QAボックスを挿入
+    qa_set_displayed.splice(i, 0, qa); //　QA情報を挿入
+  }else{
+    // 最後に追加
+    $('.qa_box_area').append($qab); // QAボックスを追加
+    qa_set_displayed.push(qa); // QA情報を追加
+  }
+  
+  apply_markdown_config("preview", target_selector=`.md_to_html_target_${qa.id}`);
+}
+
+const apply_display_conf = ()=>{
+
+  const url = new URL(location);
+
+  if($("#max_width_switch").get(0).checked){
+    $(".qa_box").css("max-width", "none");
+    url.searchParams.set("max_width_switch", "true");
+  }else{
+    $(".qa_box").css("max-width", "30em");
+    url.searchParams.set("max_width_switch", "false");
+  }
+
+  if($("#hide_header_switch").get(0).checked){
+    $(".qa_header").hide();
+    url.searchParams.set("hide_header_switch", "true");
+  }else{
+    $(".qa_header").show();
+    url.searchParams.set("hide_header_switch", "false");
+  }
+
+  
+  if($("#auto_read_aloud_switch").get(0).checked){
+    url.searchParams.set("auto_read_aloud", "true");
+  }else{
+    url.searchParams.set("auto_read_aloud", "false");
+  }
+  
+  window.history.pushState(null, null, url.href);
+
+}
+
+const update_estimated_remaining_num_label = ()=>{
+  const $etrn = $("#estimated_total_remaining_num")
+    .text(new Set([...all_ids_to_learn, ...qa_set_displayed.map(qa=>qa.id)]).size);
+  
+  $etrn.removeClass('placeholder');
+}
+</script>
+{% endblock %}

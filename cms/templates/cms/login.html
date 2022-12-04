@@ -1,0 +1,31 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}{{user}}{% endblock title %}
+
+{% block content %}
+<h1>ログイン画面</h1>
+
+<div class="reg">
+  <form method="post" action="{% url 'users:login' %}">
+    {% csrf_token %}
+
+    <table class="reg_form">
+    <tr>
+        <td><label for="email">メールアドレス:</label></td>
+        <td><input type="text" name="email"></td>
+    </tr>
+    <tr>
+        <td><label for="password">パスワード：</label></td>
+        <td><input type="password" name="password"></td>
+    </tr>
+    </table>
+
+    <input type="submit" class="btn btn-primary btn-sm" value="Login">
+ </form>
+</div>
+<p class="message">アカウントをお持ちでない場合は
+    <a href="{% url 'cms:register' %}" class="btn btn-secondary btn-sm">登録</a>
+</p>
+<a href="{% url 'cms:top' %}" class="btn btn-secondary btn-sm">トップ</a>
+{% endblock content %}

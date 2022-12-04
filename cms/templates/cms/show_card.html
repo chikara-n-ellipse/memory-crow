@@ -1,0 +1,82 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}カード: {{ card.shortened_id }}{{ card.card_fields.all.0.content | truncatechars:10 }}{% endblock title %}
+
+{% block content %}
+    <h4 class="mt-4 mb border-bottom"><i class="bi bi-card-text me-3"></i><span class="me-3">{{ card.shortened_id }}{{ card.card_fields.all.0.content | truncatechars:10 }}</span><small class="text-muted ml-3">{{card.user.nickname}}</small></h4>
+    <div class="text-muted">{{ card.user.nickname }} {% if rm.user == user %} (あなた) {% endif %}</div>
+    <div class="qa_box_area my-5 py-5 d-md-flex justify-content-center align-items-start">
+    </div>
+    <div id="card_detail_main">
+        <div class="container card_table_container"></div>
+    </div>
+    
+
+{% endblock content %}
+
+{% block extra_js %}
+
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+const qa_set_displayed = [];
+const qa_set_hidden = [];
+var active_qa_id = null;
+var rc_filters;
+var rm_set_loaded = [];
+var total_count = 0;
+var all_ids_to_learn = [];
+
+$(() => {
+    let card_id = "{{ card_id | safe }}";
+    let card = JSON.parse('{{ card_json | safe}}'.slice(1,-1));
+
+    card.qa_set_with_user_rm.map(qa=>{
+        const $qab = create_qa_box(qa, qa.user_rm, card, "qa_box_area", options={
+            prevent_judge: true,
+            no_activation: true,
+        });
+        $('.qa_box_area').append($qab);
+    })
+    
+
+    jump_to_next = ()=>{
+        window.location.href = "{% url 'cms:list_cards' %}";
+    }
+
+    let _row = get_card_data(card)
+    _row.unshift(null); // チェックボックス用
+
+    let container_id = 'card_detail_main';
+    $(`#${container_id} .dialog_container`).html(get_confirmation_dialog_html());
+
+    let columns = get_card_columns(container_id, handle_html=null, 
+        on_delete_name="jump_to_next", single_display=true);
+    let row = {'cells': columns.map((c, i)=>{return {'data': _row[i]}})};
+    let tbody = columns.slice(1).map((c, i)=>{
+        if(!c.formatter)c.formatter = (cell)=>cell;
+        let v = c.formatter(_row[i+1], row);
+        return `
+            <div class="row mb-5">
+                <div class="col-md-4 text-muted">${c.name}</div>
+                <div class="col-md-7 ms-4">${v}</div>
+            </div>
+        `;
+    }).join('');
+
+    $(".card_table_container").html(`
+        <div class="container table-dark table-striped table-hover mt-3 mb-5">
+            ${tbody}
+        </div>
+    `);
+
+    $('.md_preview_button').click();
+
+})
+
+var jump_to_next;
+</script>
+{% endblock %}

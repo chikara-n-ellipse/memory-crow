@@ -1,0 +1,232 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}トップ{% endblock title %}
+
+{% block content %}
+
+{% if not user.is_authenticated %}
+<div class="m-2 text-warning">
+    <i class="material-icons m-2 md-18">warning</i>ログインしていません。
+    <a href="{% url 'users:login' %}" class="btn btn-sm mx-2 btn-outline-secondary px-2 border">ログイン</a>
+</div>
+{% endif %}
+
+<div class="h2 text-muted my-4">公開されているQ&A</div>
+
+<!-- 検索ボックス/順序変更 -->
+<div class="d-flex flex-wrap">
+    <div class="search_for_qab_area_div input-group mb-3 me-2" style="max-width:20em;">
+        <input type="text" class="search_input form-control" placeholder="検索" 
+            aria-label="検索" aria-describedby="button-addon2">
+        <button class="search_button btn btn-outline-secondary" type="button" id="button-addon2">検索</button>
+    </div>
+    <div class="change_order_input_for_qab_area_div btn-group mb-3" style="max-width:20em;">
+        <input type="radio" class="order_by_input btn-check" value="created_at" name="order_by" id="btnradio1" autocomplete="off" checked>
+        <label class="btn btn-outline-primary" for="btnradio1">新着順</label>
+
+        <input type="radio" class="order_by_input btn-check" value="rm_users_count" name="order_by" id="btnradio2" autocomplete="off">
+        <label class="btn btn-outline-primary" for="btnradio2">人気順</label>
+    </div>
+</div>
+
+<div class="text-muted"><span id="total_card_count_span" class="placeholder">???</span> 件のカード,  <span id="total_qa_count_span" class="placeholder">???</span> 件のQ&A</div>
+
+<div class="qa_box_area my-5 py-5 row justify-content-center align-items-stretch">
+</div>
+
+<div class="return_button_container d-flex align-items-center flex-column justify-content-center">
+    <div class="loading_spinner spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="btn_read_qa btn btn-primary btn-lg m-3 d-none">Q&Aを読込む</div>
+</div>
+
+<div class="accordion mt-5 mb-5" id="user_detail_accordion">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading_cards">
+            <button class="accordion-button bg-dark text-muted" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#collapse_cards"
+                aria-expanded="true" aria-controls="collapse_cards">
+                公開されているカード
+            </button>
+        </h2>
+        <div id="collapse_cards" class="accordion-collapse collapse show bg-dark text-muted" aria-labelledby="heading_cards"
+            data-bs-parent="#user_detail_accordion">
+            <div class="accordion-body">
+                <div id="card_list_wrapper"></div>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading_projects">
+            <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#collapse_projects"
+                aria-expanded="true" aria-controls="collapse_projects">
+                公開されているプロジェクト
+            </button>
+        </h2>
+        <div id="collapse_projects" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_projects"
+            data-bs-parent="#user_detail_accordion">
+            <div class="accordion-body">
+                <div id="project_list_wrapper"></div>
+            </div>
+        </div>
+    </div>
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="heading_tags">
+            <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#collapse_tags"
+                aria-expanded="true" aria-controls="collapse_tags">
+                公開されているユーザタグ
+            </button>
+        </h2>
+        <div id="collapse_tags" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_tags"
+            data-bs-parent="#user_detail_accordion">
+            <div class="accordion-body">
+                <div id="tag_list_wrapper"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+const qa_set_displayed = [];
+const qa_set_hidden = [];
+var active_qa_id = null;
+var rc_filters;
+var cards_loaded = [];
+var total_count = 0;
+var total_qa_set_count = 0;
+var all_card_ids = [];
+
+$(() => {
+
+    $("#dialog_container").html(get_confirmation_dialog_html());
+
+    init_card_list(filters = {
+        limit: 10,
+        public_only: true,
+        request_user_related_only: false,
+    });
+
+    init_project_list(filters = {
+        limit:10,
+        public_only: true,
+        request_user_related_only: false,
+    });
+
+    init_tag_list(filters = {
+        limit:10,
+        public_only: true,
+        request_user_related_only: false,
+    });
+
+    let additional_filters = {
+        term: '',
+        order_by: ['created_at'],
+        order_dir: ['desc'],
+    };
+
+    $(`.search_for_qab_area_div .search_button`).on('click', ()=>{
+        additional_filters.term = $(`.search_for_qab_area_div .search_input`).val();
+        reload_qa_box_area();
+    });
+
+    $(`.change_order_input_for_qab_area_div .order_by_input`).change(()=>{
+        additional_filters.order_by = [$(`.change_order_input_for_qab_area_div .order_by_input:checked`).val()];
+        additional_filters.order_dir = ['desc'];
+        reload_qa_box_area();
+    });
+
+    // 復習管理読み込みボタンが押されたときの処理
+    $('.btn_read_qa').on('click', ()=>{
+        load_qa_set_as_cards(additional_filters=additional_filters);
+    });
+
+    // 最初の復習管理読み込み
+    load_qa_set_as_cards(additional_filters=additional_filters);
+})
+
+var jump_to_next;
+
+const load_qa_set_as_cards = (additional_filters=null)=>{
+
+    $(".btn_read_qa").hide();
+    $(".loading_spinner").show();
+
+    const url_path = '/api/get_cards';
+    let url_queries = {
+        limit:10,
+        public_only: true,
+        request_user_related_only: false,
+    };
+
+    url_queries.excludes = qa_set_displayed.concat(qa_set_hidden).map(qa=>qa.card.id);
+
+    if(additional_filters){
+        url_queries = {...url_queries, ...additional_filters};
+    }
+
+    if (!url_queries.project) delete url_queries.project;
+    if (!url_queries.tags) delete url_queries.tags;
+
+    $.ajax({
+        type: 'GET',
+        url: get_url_from_path_and_queries(url_path, url_queries),
+        contentType: "application/json",
+        beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', 'Bearer {{user.token}}'); },
+    })
+    .done((data)=> {
+        cards_loaded = data.results;
+        total_count = data.total_count;
+        total_qa_set_count = data.total_qa_set_count;
+        all_card_ids = data.all_ids;
+
+        $("#total_card_count_span")
+            .text(total_count)
+            .removeClass('placeholder');
+
+        $("#total_qa_count_span")
+            .text(total_qa_set_count)
+            .removeClass('placeholder');
+
+        cards_loaded.forEach(card=>{
+            card.qa_set_with_user_rm.map(qa=>{
+                const $qab = create_qa_box(qa, qa.user_rm, card, "qa_box_area", options={
+                    prevent_judge: true,
+                    no_activation: true,
+                    additional_class: 'flex-fill m-1 col-md-6 col-lg-4',
+                });
+                $('.qa_box_area').append($qab);
+                qa_set_displayed.push(qa);
+
+                apply_markdown_config("preview", target_selector=`.md_to_html_target_${qa.id}`);
+            })
+        });
+
+        $(".btn_read_qa").removeClass('d-none');
+        $(".btn_read_qa").show();
+        $(".loading_spinner").hide();
+    })
+    .fail(function() {
+        alert('error');
+        $(".btn_read_qa").removeClass('d-none');
+        $(".btn_read_qa").show();
+        $(".loading_spinner").hide();
+    });
+}
+
+
+
+</script>
+{% endblock %}

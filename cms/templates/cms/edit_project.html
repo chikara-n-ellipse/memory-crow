@@ -1,0 +1,319 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}
+{% if project_id %}
+プロジェクトの編集
+{% else %}
+プロジェクトの新規作成
+{% endif %}
+{% endblock title %}
+
+{% block content %}
+
+<h4 class="mt-4 mb-5 border-bottom"><i class="bi bi-flag-fill me-3"></i>{% if project_id %}プロジェクトの編集{% else %}プロジェクトの新規作成{% endif %}</h4>
+
+<!-- <form action="{% if project_id %}{% url 'cms:edit_project' project_id=project_id %}{% else %}{% url 'cms:add_project' %}{% endif %}?{{ action_parameters }}" 
+  method="post" class="container"> -->
+<form class="container">
+
+  {% csrf_token %}
+
+  <div {% if project.user != user %}hidden{% endif %}>
+
+    <div class="row mb-5">
+      <label class="text-muted col-md-2" for="project_name_input">
+        プロジェクト名
+      </label>
+      <div class="col-md-6">
+        <input id="name_input" type="text" class="form-control" placeholder="プロジェクト名" aria-label="プロジェクト名" 
+          value="{{ project.name}}">
+        <div id="name_error" class="invalid-feedback"></div>
+      </div>
+    </div>
+
+    <div class="row mb-5">
+        <label class="text-muted col-md-2" for="parent_select">
+          親プロジェクト
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="親プロジェクトを設定できます。４階層を超えるように設定することはできません。また循環するように設定することはできません。"></i>
+        </label>
+        <div class="col-md-6">
+          <select id="parent_select" name="parent" class="project_select select2-hidden-accessible" tabindex="-1" aria-hidden="true">
+          </select>
+          <div id="parent_error" class="invalid-feedback"></div>
+        </div>
+    </div>
+
+    <div class="mb-5">
+      <label class="text-muted col-md-2" for="description_input">
+        説明
+        <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="マークダウンで説明を入力できます。※画像のアップロードは現在できません。"></i>
+      </label>
+      <div id="description_div">
+        <textarea id="description_input" class="form-control" aria-label="With textarea">{% if project_id %}{{ project.description}}{% endif %}</textarea>
+      </div>
+      <div id="description_error" class="invalid-feedback"></div>
+    </div>
+
+    <div class="row mb-5">
+      <label class="text-muted col-md-2" for="publicity_select">
+        公開状態
+        <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="公開すると他のユーザがこのプロジェクトをブックマーク・学習できるようになります。
+              プロジェクトを公開しても、そこに属するカードは公開されません。
+              また親や子孫のプロジェクトも公開されません。
+              これらの公開は別途個別に行う必要があります。
+              "></i>
+      </label>
+      <div class="col-md-2">
+        <select id="publicity_select" class="form-select" aria-label="Default select example">
+          <option value="0" {% if project.publicity == 0 %}selected{% endif %}>非公開</option>
+          <option value="1" {% if project.publicity == 1 %}selected{% endif %}>公開</option>
+        </select>
+        <div id="project_error" class="invalid-feedback"></div>
+      </div>
+    </div>
+    
+    {% if project_id %}
+    <!-- デフォルトテンプレートカード -->
+    <div class="row mb-5">
+      <label class="text-muted col-md-3" for="default_template_card_input">
+        デフォルトテンプレートカード
+        <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="プロジェクトのデフォルトテンプレートカードを設定します。
+                  テンプレートカードに定型的な文やタグを入力しておくことで、カードの作成を高速化できます。
+                  テンプレートに指定されたカードはラーニングでは出題されなくなります。
+                  またテンプレートに指定できるカードは該当プロジェクトに属する既存のカードのみです。
+                "></i>
+      </label>
+      <div class="col-md-6">
+        <select id="default_template_card_select" name="default_template_card" class="card_select" data-select2-id="select2-data-id_default_template_card" tabindex="-1" aria-hidden="true">
+          <option></option>
+        </select>
+        <div id="default_template_card_error" class="invalid-feedback"></div>
+      </div>
+    </div>
+    {% endif %}
+
+    <hr class="mb-5"/>
+
+  </div>
+
+  <div class="row mb-5"><p><em class="text-muted">以下の各項目はプロジェクトの公開にかかわらず他のユーザに影響しません。</em></p></div>
+
+  <div class="row mb-5">
+
+    <label class="text-muted col-md-1" for="is_active_select">
+      活動状態
+      <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="
+                  非アクティブに設定するとこのプロジェクトに属するカードはラーニングにおいて原則出題されなくなります。
+                "></i>
+    </label>
+    <div class="col-md-3">
+      <select id="is_active_select" class="form-select" aria-label="Default select example">
+        <option value="true" {% if project.user_plm.is_active %}selected{% endif %}>アクティブ</option>
+        <option value="false" {% if not project.user_plm.is_active %}selected{% endif %}>非アクティブ</option>
+      </select>
+      <div id="is_active_error" class="invalid-feedback"></div>
+    </div>
+    <label class="text-muted col-md-1" for="star_select">
+      スター
+      <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="
+                  よく使うプロジェクトにスターをつけておくと便利です。
+                "></i>
+    </label>
+    <div class="col-md-3">
+      <select id="star_select" class="form-select" aria-label="Default select example">
+        <option value="0" {% if project.user_plm.star == 0 %}selected{% endif %}>スター無し</option>
+        <option value="1" {% if project.user_plm.star == 1 %}selected{% endif %}>☆</option>
+        <option value="2" {% if project.user_plm.star == 2 %}selected{% endif %}>☆☆</option>
+        <option value="3" {% if project.user_plm.star == 3 %}selected{% endif %}>☆☆☆</option>
+        <option value="4" {% if project.user_plm.star == 4 %}selected{% endif %}>☆☆☆☆</option>
+        <option value="5" {% if project.user_plm.star == 5 %}selected{% endif %}>☆☆☆☆☆</option>
+      </select>
+      <div id="star_error" class="invalid-feedback"></div>
+    </div>
+
+  </div>
+
+  <div class="row mb-5">
+      <button id="submit_button" type="button" class="btn btn-primary m-2">送信</button>
+  </div>
+
+</form>
+{% if next %}<a href="{{ next }}" class="btn btn-secondary btn-sm">戻る</a>{% endif %}
+{% endblock content %}
+
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(()=>{
+
+  let project_id = '{% if project_id %}{{ project_id }}{% endif %}' || null;
+
+  const project = JSON.parse('{{ project_json | safe}}'.slice(1,-1));
+  const parent_project = JSON.parse('{{ parent_project_json | safe}}'.slice(1,-1)); // 親プロジェクトが無い場合はnullになる。
+
+  let addtional_filters = {
+    exclude_max_path:true,
+  };
+  if(project_id){
+    addtional_filters.exclude_descendant_of = project_id;
+  }
+  init_project_select(dropdown_parent=null,  multiple=false, addtional_filters);
+  if(parent_project){
+    const $init_project_select_option = $(`<option value="${parent_project.id}" title="${parent_project.name}" selected></option>`).text(`
+          <div class="m-1">${get_project_badge_html(parent_project)}</div>
+      `)
+    $('.project_select').append($init_project_select_option)
+                        .trigger('change');
+  }
+
+  init_card_select(dropdown_parent=null, multiple=false, 
+        addtional_filters={project:project_id, with_project_descendants:false});
+  if(project_id && project.default_template_card){
+    const pdt_card = project.default_template_card
+    const $init_project_select_option = $(`<option value="${pdt_card.id}" title="${pdt_card.id}" selected></option>`).text(`
+        <div class="m-1">${card.shortened_id}:${get_escaped_text(card.card_fields[0].content)}</div>
+      `)
+    $('.project_select').append($init_project_select_option)
+                        .trigger('change');
+  }
+
+
+  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+  const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+  
+
+  var editor = editormd("description_div", {
+    height: 300,
+    lineWrapping: true,
+
+    theme : "dark",
+    previewTheme : "dark",
+    editorTheme : "pastel-on-dark",
+    autoFocus: false,
+    lineNumbers: false,
+
+    toc             : true,
+    emoji           : true,
+    taskList        : true,
+    tex             : true,
+
+    placeholder: "",
+    path : "/static/cms/js/editor.md-master/lib/"  // Autoload modules mode, codemirror, marked... dependents libs path
+  });
+  
+  $(document).keydown((e)=>{
+    if(e.ctrlKey && e.key=="Enter"){
+      $("#submit_button").click()
+    }
+  });
+
+  $('#submit_button').on('click', ()=>{
+
+    const project = {
+      name: $('#name_input').val(),
+      description: $('#description_input').val(),
+      publicity: $('#publicity_select').val(),
+    };
+
+    const plm = {
+      is_active: $('#is_active_select').val(),
+      star: $('#star_select').val(),
+    };
+
+    if(project_id)project.id = project_id;
+
+    let parent_id = $('#parent_select').val();
+    if(parent_id)project.parent_id = parent_id;
+
+    if(project_id){
+      let pdt_card_id = $('#default_template_card_select').val();
+      if(pdt_card_id)project.default_template_card_id = pdt_card_id;
+    }
+
+    // 以下バリデーション
+
+    let val;
+    let is_all_valid = true;
+
+    $('input').removeClass('is-invalid');
+
+    val = validate_name(project.name);
+    if(!val.result){
+      let error_msg = `不正なプロジェクト名: ${val.msg}`;
+      is_all_valid = false;
+      $('#name_input').addClass('is-invalid');
+      $('#name_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    if(project.parent_id){
+      val = validate_uuid(project.parent_id);
+      if(!val.result){
+        alert(`不正な親プロジェクト: ${val.msg}`);
+        is_all_valid = false;
+      }
+    }else{
+      delete project.parent_id;
+    }
+
+    let l = project.description.length;
+    if(l>5000){
+      alert(`説明の長さが5000文字を超えています。現在の字数: ${l.length}`);
+      is_all_valid = false;
+    }
+    if(![0,1].includes(parseInt(project.publicity))){
+      alert(`公開状態の値が不正です。入力: ${project.publicity}`);
+      is_all_valid = false;
+    }
+
+    if(![0,1,2,3,4,5].includes(parseInt(plm.star))){
+      alert(`スターの値が不正です。入力: ${plm.star}`);
+      is_all_valid = false;
+    }
+
+    if (!is_all_valid) {
+      return;
+    }
+
+    // 提出時のajax通信
+
+    let data = {
+      project,
+      plm,
+    };
+    
+    $.ajax({
+        type: 'POST',
+        url: `/api/update_project`,
+        data: JSON.stringify(data),
+        beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+    })
+    .done((data)=> {
+        location = '{% if next %}{{ next | safe }}{% else %}/cms/list_projects/{% endif %}';
+    })
+    .fail((error)=>{
+        alert('提出処理に失敗しました。');
+    });
+
+  });
+  
+});
+</script>
+{% endblock %}

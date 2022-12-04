@@ -1,0 +1,147 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}ユーザ: {{tuser.nickname | truncatechars:20}}{% endblock title %}
+
+{% block content %}
+    <h4 class="mt-4 mb border-bottom"><i class="bi bi-person-circle me-3"></i><span class="me-3">{{tuser.nickname | truncatechars:20}}{% if tuser == user %} (あなた) {% endif %}</span></h4>
+    
+    <div class="m-3">
+        {% if tuser == user %} あなたの公開ページです。他のユーザから見たときの実際の見た目と異なる場合があります。 {% endif %}
+    </div>
+
+    <div class="accordion mt-5 mb-5" id="user_detail_accordion">
+        <div id="user_detail_main" class="accordion-item">
+            <h2 class="accordion-header" id="heading_attrs">
+                <button class="accordion-button bg-dark text-muted" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse_attrs"
+                    aria-expanded="true" aria-controls="collapse_attrs">
+                    <i class="bi bi-person-circle me-3"></i><span class="me-3">{{tuser.nickname}}</span>の詳細
+                </button>
+            </h2>
+            <div id="collapse_attrs" class="accordion-collapse collapse show bg-dark text-muted" aria-labelledby="heading_attrs"
+                data-bs-parent="#user_detail_accordion">
+                <div class="accordion-body">
+                    <div class="container user_table_container">
+                        <div class="">説明</div>
+                        <div class="">基本情報</div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading_cards">
+                <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse_cards"
+                    aria-expanded="true" aria-controls="collapse_cards">
+                    <i class="bi bi-person-circle me-3"></i><span class="me-3">{{tuser.nickname}}</span>の公開カード
+                </button>
+            </h2>
+            <div id="collapse_cards" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_cards"
+                data-bs-parent="#user_detail_accordion">
+                <div class="accordion-body">
+                    <div id="card_list_wrapper"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading_projects">
+                <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse_projects"
+                    aria-expanded="true" aria-controls="collapse_projects">
+                    <i class="bi bi-person-circle me-3"></i><span class="me-3">{{tuser.nickname}}</span>の公開プロジェクト
+                </button>
+            </h2>
+            <div id="collapse_projects" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_projects"
+                data-bs-parent="#user_detail_accordion">
+                <div class="accordion-body">
+                    <div id="project_list_wrapper"></div>
+                </div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading_tags">
+                <button class="accordion-button collapsed bg-dark text-muted" type="button" 
+                    data-bs-toggle="collapse" data-bs-target="#collapse_tags"
+                    aria-expanded="true" aria-controls="collapse_tags">
+                    <i class="bi bi-person-circle me-3"></i><span class="me-3">{{tuser.nickname}}</span>の公開タグ
+                </button>
+            </h2>
+            <div id="collapse_tags" class="accordion-collapse collapse bg-dark text-muted" aria-labelledby="heading_tags"
+                data-bs-parent="#user_detail_accordion">
+                <div class="accordion-body">
+                    <div id="tag_list_wrapper"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(() => {
+    
+    let tuser_id = "{{ tuser.id }}";
+    let tuser = JSON.parse('{{tuser_json | safe}}'.slice(1,-1));
+
+    let container_id = 'user_detail_main';
+
+    $(`#${container_id} .dialog_container`).html(get_confirmation_dialog_html());
+
+    let _row = get_user_data(tuser);
+    _row.unshift(null); // チェックボックス用
+
+    let columns = get_user_columns(container_id, handle_html = null, 
+        on_delete_name = "jump_to_next", single_display=true);
+    let row = { 'cells': columns.map((c, i) => { return { 'data': _row[i] } }) };
+    let tbody = columns.slice(1).map((c, i) => {
+        if (!c.formatter) c.formatter = (cell) => cell;
+        let v = c.formatter(_row[i + 1], row);
+        return `
+            <div class="row mb-5">
+                <div class="col-md-4 text-muted">${c.name}</div>
+                <div class="col-md-7 ms-4">${v}</div>
+            </div>
+        `;
+    }).join('');
+
+    $(".user_table_container").html(`
+        <div class="container table-dark table-striped table-hover mt-3 mb-5">
+            ${tbody}
+        </div>
+    `);
+    
+    $('.md_preview_button').click();
+
+    init_card_list(filters = {
+        limit:10,
+        public_only:true,
+        tuser_id: tuser_id,
+        request_user_related_only: false,
+    });
+
+    init_project_list(filters = {
+        limit:10,
+        public_only:true,
+        tuser_id: tuser_id,
+        request_user_related_only: false,
+    });
+
+    init_tag_list(filters = {
+        limit:10,
+        public_only:true,
+        tuser_id: tuser_id,
+        request_user_related_only: false,
+    });
+})
+
+var jump_to_next;
+
+</script>
+{% endblock %}

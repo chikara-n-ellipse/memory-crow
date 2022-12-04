@@ -1,0 +1,160 @@
+{% load i18n static %}
+<!DOCTYPE html>{% get_current_language as LANGUAGE_CODE %}
+<html lang='{{ LANGUAGE_CODE|default:" en-us" }}'>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="{% static 'cms/css/bootstrap.min.css' %}">
+  <!-- <link rel="stylesheet" href="{% static 'mdeditor/css/editormd.min.css' %}">
+  <link rel="stylesheet" href="{% static 'mdeditor/css/editormd.preview.css' %}"> -->
+  <link rel="stylesheet" href="{% static 'cms/css/select2.min.css' %}">
+  <link rel="stylesheet" href="{% static 'cms/css/my_style.css' %}">
+  <link rel="stylesheet" href="{% static 'cms/css/mermaid.min.css' %}">
+  <link rel="stylesheet" href="{% static 'cms/css/mermaid.min.css' %}">
+  <!-- 以下のbootstrap-iconsはstaticではアイコンが反映されなかった -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+  <link rel="icon" type="image/png" href="{% static 'cms/icon/favicon.ico' %}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Icons">
+  <link rel="stylesheet" href="{% static 'cms/css/jquery.datetimepicker.css' %}">
+  <link rel="stylesheet" href="{% static 'cms/js/editor.md-master/css/editormd.min.css' %}" />
+  {% block extra_css %}{% endblock %}
+  <title>{% block title %}Ankee{% endblock %}</title>
+</head>
+
+<body class="text-light" style="background-color:#1d2022;">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+    <div class="container-fluid">
+      <a class="navbar-brand text-primary" href="{% url 'cms:top' %}">Memory Crow</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          {% if user.id %}
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'users:user_dashboard'%}">
+              <i class="bi bi-house-fill me-2"></i>ダッシュボード</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ user.default_learning_url }}">
+              <i class="bi bi-play-btn-fill me-2"></i>ラーニング</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'cms:list_rm_set'%}">
+              <i class="bi bi-stopwatch me-2"></i>復習管理</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'cms:list_cards'%}">
+              <i class="bi bi-card-text me-2"></i>カード</a>
+          </li>
+          {% endif %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+              aria-expanded="false">
+              その他
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdown">
+              {% if user.id %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'cms:top'%}" title="トップ">
+                  <i class="material-icons md-18 me-2" style="position:relative;top:3px">public</i>トップ</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'cms:list_projects'%}">
+                  <i class="bi bi-flag-fill me-2"></i>プロジェクト</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'cms:list_tags'%}">
+                  <i class="bi bi-tag-fill me-2"></i>タグ</a>
+              </li>
+              <li><a href="{% url 'users:edit_userconf'%}" class="dropdown-item">
+                <i class="material-icons md-18 me-2" style="position:relative;top:3px">manage_accounts</i>ユーザ設定</a></li>
+              <li><a href="{% url 'cms:show_user' tuser_id=user.id%}" class="dropdown-item">
+                <i class="bi bi-person-circle me-3"></i>あなたの公開ページ</a></li>
+              {% endif %}
+              <li><a href="{% url 'cms:how_to_use'%}" class="dropdown-item">
+                <i class="material-icons md-18 me-2" style="position:relative;top:3px">question_mark</i>使い方</a></li>
+            </ul>
+          </li>
+        </ul>
+        <div class="d-flex flex-row ">
+          {% if user.id %}
+          <div class="navbar-text mx-2"><i class="bi bi-person-circle me-2"></i>{{user.nickname}} さん</div>
+          <a href="{% url 'users:logout' %}" class="navbar-text nav-link btn btn-sm mx-2 px-2 border">ログアウト</a>
+          {% else %}
+          <a href="{% url 'users:login' %}" class="navbar-text nav-link btn btn-sm mx-2 px-2 border">ログイン</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    {% block content %}
+    {{ content }}
+    {% endblock %}
+  </div>
+  
+  <!-- ダイアログ -->
+  <div class="dialog_container"></div>
+
+  <!-- 結果通知アラート -->
+  <div class="result_alert_container"></div>
+      
+  <script src="{% static 'cms/js/jquery-3.6.1.min.js' %}"></script>
+  <script src="{% static 'cms/js/bootstrap.bundle.min.js' %}"></script>
+
+  <!-- editormd -->
+  <script src="{% static 'cms/js/editor.md-master/editormd.min.js' %}"></script>
+  <script src="{% static 'cms/js/editor.md-master/languages/en.js' %}"></script>
+  <script src="{% static 'cms/js/editor.md-master/lib/marked.min.js' %}"></script>
+  <script src="{% static 'cms/js/editor.md-master/lib/prettify.min.js' %}"></script>
+
+  <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" ></script> -->
+
+  <!-- 以下マークダウン用 (一部エラーを吐くため除外)-->
+  <!-- <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.3/dist/katex.js" integrity="sha384-ZfxPSr1+NHNHrv9KI48JF/1RkvdoxKWJPuYyfxE+iexlsGw8tyQR4OuNVNUuzwLN" crossorigin="anonymous"></script>
+  <script src="{% static 'mdeditor/js/jquery.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/editormd.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/marked.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/prettify.min.js' %}"></script> -->
+  <!-- 以下のraphaelはオンにすると、マークダウンの編集および表示ページで
+    bootstrapのダイアログやドロップダウンが一部動作しなくなる。 
+    そのかわりシーケンス図が描画できるようになる。-->
+  <!-- <script src="{% static 'mdeditor/js/lib/raphael.min.js' %}"></script> -->
+  <!-- 以下のcdn経由のraphaelに変更したところ、上記の症状が編集時のみになった。 -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/raphael/2.3.0/raphael.min.js" integrity="sha512-tBzZQxySO5q5lqwLWfu8Q+o4VkTcRGOeQGVQ0ueJga4A1RKuzmAu5HXDOXLEjpbKyV7ow9ympVoa6wZLEzRzDg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'mdeditor/js/lib/underscore.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/sequence-diagram.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/flowchart.min.js' %}"></script>
+  <script src="{% static 'mdeditor/js/lib/jquery.flowchart.min.js' %}"></script>
+  <script src="{% static 'mdeditor/languages/en.js'%}"></script> -->
+  
+  <!-- grid.js 関連 -->
+  <script src="{% static 'cms/js/gridjs@5.1.0/gridjs.umd.js'%}"></script>
+  <script src="{% static 'cms/js/gridjs@5.1.0/selection.umd.js'%}"></script>
+
+  <!-- select2 -->
+  <script src="{% static 'cms/js/select2.min.js' %}"></script>
+  
+  <!-- datatime picker -->
+  <script src="{% static 'cms/js/jquery.datetimepicker.full.js' %}"></script>
+
+  <script src="{% static 'cms/js/my_script.js' %}"></script>
+  <script src="{% static 'cms/js/get_columns.js' %}"></script>
+  <script src="{% static 'cms/js/show_confmodal.js' %}"></script>
+  <script src="{% static 'cms/js/list.js' %}"></script>
+
+<script>
+$(()=>{
+  // ダイアログ初期化
+  $(`.dialog_container`).html(get_confirmation_dialog_html());
+})
+</script>
+  
+  {% block extra_js %}{% endblock %}
+</body>
+
+</html>

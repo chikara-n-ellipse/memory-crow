@@ -1,0 +1,214 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}
+{% if tag_id %}
+タグの編集
+{% else %}
+タグの新規作成
+{% endif %}
+{% endblock title %}
+
+{% block content %}
+
+
+<h4 class="mt-4 mb-5 border-bottom"><i class="bi bi-tag-fill me-3"></i>{% if tag_id %}タグの編集{% else %}タグの新規作成{% endif %}</h4>
+<!-- <form
+  action="{% if tag_id %}{% url 'cms:edit_tag' tag_id=tag_id %}{% else %}{% url 'cms:add_tag' %}{% endif %}?{{ action_parameters }}"
+  method="post" class="container"> -->
+<form class="container">
+  
+  {% csrf_token %}
+
+  <div class="row mb-5">
+    <label class="text-muted col-md-2" for="name_input">
+      タグ名
+      <i class="bi bi-info-circle-fill ms-2" style="font-size: 0.8em;" data-bs-toggle="tooltip"
+        data-bs-placement="bottom" title=""></i>
+    </label>
+    <div class="col-md-6">
+      <input id="name_input" type="text" class="form-control" placeholder="タグ名" aria-label="タグ名" 
+        value="{{ tag.name}}">
+      <div id="name_error" class="invalid-feedback"></div>
+    </div>
+  </div>
+
+  <div class="row mb-5">
+    <label class="text-muted col-md-3" for="parent_input">
+      親タグ
+      <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="親タグを設定できます。４階層を超えるように設定することはできません。また循環するように設定することはできません。"></i>
+    </label>
+    <div class="col-md-6">
+      <select id="parent_select" name="parent" class="tag_select select2-hidden-accessible" data-select2-id="select2-data-id_parent" tabindex="-1" aria-hidden="true">
+      </select>
+      <div id="parent_error" class="invalid-feedback"></div>
+    </div>
+  </div>
+
+  <div class="row mb-5">
+    <label class="text-muted col-md-2" for="star_input">
+      スター （常に非公開）
+      <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="
+                  よく使うプロジェクトにスターをつけておくと便利です。
+                "></i>
+    </label>
+    <div class="col-md-2">
+      <select id="star_select" class="form-select" aria-label="Default select example">
+        <option value="0" {% if tag.star_safe == 0 %}selected{% endif %}>スター無し</option>
+        <option value="1" {% if tag.star_safe == 1 %}selected{% endif %}>☆</option>
+        <option value="2" {% if tag.star_safe == 2 %}selected{% endif %}>☆☆</option>
+        <option value="3" {% if tag.star_safe == 3 %}selected{% endif %}>☆☆☆</option>
+        <option value="4" {% if tag.star_safe == 4 %}selected{% endif %}>☆☆☆☆</option>
+        <option value="5" {% if tag.star_safe == 5 %}selected{% endif %}>☆☆☆☆☆</option>
+      </select>
+      <div id="star_error" class="invalid-feedback"></div>
+    </div>
+
+    <label class="text-muted col-md-2" for="publicity_input">
+      公開状態
+      <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="公開すると他のユーザがこのタグを閲覧できるようになります。
+              公開カードの作成者がそのカードに公開タグを付加した場合には
+              他のユーザにもカードにそのタグが付加されているように見えます。
+              タグを公開しても、タグが付加されたカードは公開されません。
+              また親や子孫のタグも公開されません。
+              これらの公開は別途個別に行う必要があります。
+              "></i>
+    </label>
+    <div class="col-md-2">
+      <select id="publicity_select" class="form-select" aria-label="Default select example">
+        <option value="0" {% if tag.publicity == 0 %}selected{% endif %}>非公開</option>
+        <option value="1" {% if tag.publicity == 1 %}selected{% endif %}>公開</option>
+      </select>
+      <span class="helptext">{{ form.publicity.help_text }}</span>
+      <div id="publicity_error" class="invalid-feedback"></div>
+    </div>
+
+  </div>
+
+  <div class="row mb-5">
+    <button id="submit_button" type="button" class="btn btn-primary m-2">送信</button>
+  </div>
+
+</form>
+{% if next %}<a href="{{ next }}" class="btn btn-secondary btn-sm">戻る</a>{% endif %}
+{% endblock content %}
+
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(()=>{
+
+  let tag_id = '{% if tag_id %}{{ tag_id | safe }}{% endif %}' || null;
+  const tag = JSON.parse('{{ tag_json | safe}}'.slice(1,-1));
+  const parent_tag = JSON.parse('{{ parent_tag_json | safe}}'.slice(1,-1)); // 親タグが無い場合はnullになる。
+
+  let addtional_filters = {
+    exclude_max_path:true,
+  };
+  if(tag_id){
+    addtional_filters.exclude_descendant_of = tag_id;
+  }
+  init_tag_select(dropdown_parent=null,  multiple=false, addtional_filters);
+  if(parent_tag){
+    const $init_tag_select_option = $(`<option value="${parent_tag.id}" title="${parent_tag.name}" selected></option>`).text(`
+          <div class="m-1">${get_tag_badge_html(parent_tag)}</div>
+      `)
+    $('.tag_select').append($init_tag_select_option)
+                        .trigger('change');
+  }
+
+  $(document).keydown((e)=>{
+    if(e.ctrlKey && e.key=="Enter"){
+      $("#submit_button").click();
+    }
+  });
+
+  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+  const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+
+  $('#submit_button').on('click', ()=>{
+
+    let tag = {
+      name: $('#name_input').val(),
+      star: $('#star_select').val(),
+      publicity: $('#publicity_select').val(),
+    };
+
+    if(tag_id)tag.id = tag_id;
+
+    let parent_id = $('#parent_select').val();
+    if(parent_id)tag.parent_id = parent_id;
+
+    // 以下バリデーション
+
+    let val;
+    let is_all_valid = true;
+
+    $('input').removeClass('is-invalid');
+
+    val = validate_name(tag.name);
+    if(!val.result){
+      let error_msg = `不正なプロジェクト名: ${val.msg}`;
+      is_all_valid = false;
+      $('#name_input').addClass('is-invalid');
+      $('#name_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    if(tag.parent_id){
+      val = validate_uuid(tag.parent_id);
+      if(!val.result){
+        alert(`不正な親プロジェクト: ${val.msg}`);
+        is_all_valid = false;
+      }
+    }else{
+      delete tag.parent_id;
+    }
+
+    if(![0,1,2,3,4,5].includes(parseInt(tag.star))){
+      alert(`スターの値が不正です。入力: ${tag.star}`);
+      is_all_valid = false;
+    }
+    if(![0,1].includes(parseInt(tag.publicity))){
+      alert(`公開状態の値が不正です。入力: ${tag.publicity}`);
+      is_all_valid = false;
+    }
+
+    if (!is_all_valid) {
+      return;
+    }
+
+    // 提出時のajax通信
+
+    let data = {
+      tag,
+    };
+
+    $.ajax({
+        type: 'POST',
+        url: `/api/update_tag`,
+        data: JSON.stringify(data),
+        beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+    })
+    .done((data)=> {
+        location = '{% if next %}{{ next | safe }}{% else %}/cms/list_tags/{% endif %}';
+    })
+    .fail((error)=>{
+        alert('提出処理に失敗しました。');
+    });
+
+  });
+
+});
+</script>
+{% endblock %}

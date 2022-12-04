@@ -1,0 +1,269 @@
+table {
+    color: gray
+}
+
+.qa_box {
+    background: rgb(40, 46, 50);
+    box-shadow: 0 5px 10px 5px rgba(14, 14, 14, 0.247);
+}
+
+.qa_box.active {
+    background: rgb(40, 46, 50);
+    box-shadow: 0 1px 5px 5px rgba(9, 61, 172, 0.274);
+    border: rgb(26, 114, 197);
+    z-index:2;
+}
+
+.question_box {
+    color: whitesmoke;
+    font-size: 200%;
+}
+
+.answer_box {
+    color: gray;
+    font-size: 200%;
+    min-height: 3em;
+}
+
+.md_field_div {
+    background-color:#1e2b23 !important;
+}
+
+.show_answer_button {
+    width:100%; 
+    background: #69530b;
+    color:rgb(125, 131, 138)
+}
+
+.show_answer_button:hover {
+    background: #72550d;
+    color:rgb(178, 188, 199);
+}
+
+.masked {
+    background: darkslategray;
+}
+
+.answer_p {
+    color: orange;
+}
+
+.button_box {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    color: gray;
+}
+
+
+.return_button_container {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.markdown-body {
+    font-family: "" !important;
+}
+
+.select2 {
+    width:  100% !important;
+}
+
+.select2-search {
+    color: white;
+    background-color: #302a2a;
+}
+
+.select2-search input {
+    color: white;
+    background-color: #302a2a;
+}
+
+.select2-search input:focus {
+    color: white;
+    background-color: #302a2a;
+}
+
+.select2-dropdown {
+    color: white;
+    background-color: #302a2a;
+    z-index: 9999;
+}
+
+.select2-selection {
+    color: white;
+    background-color: #302a2a;
+}
+
+.select2-container {
+    color: white;
+    background-color: #302a2a;
+}
+
+.select2-results ul li {
+    color: white;
+    background-color: #302a2a;
+}
+
+.select2-selection--clearable {
+    color: white !important;
+    background-color: #302a2a;
+}
+
+.select2-selection__clear {
+    color: gray !important;
+}
+
+.select2-selection--single {
+    color: white !important;
+    background-color: #302a2a !important;
+    min-height: 45px !important;
+}
+
+.select2-selection--multiple {
+    color: white !important;
+    background-color: #302a2a !important;
+    min-height: 37px !important;
+}
+
+.select2-selection__choice {
+    color: white !important;
+    background-color: #302a2a !important;
+}
+
+.select2-selection__rendered {
+    color: white !important;
+}
+
+.select2-selection__choice__display {
+    color: white;
+    background-color: #302a2a;
+}
+
+.select2-selection--multiple .select2-selection__choice__remove {
+    height: 35px;
+}
+
+.select2-container--default .select2-results__option--selected {
+    background-color: rgb(66, 66, 66) !important;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background-color: rgba(0,0,0,0.3) !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: rgba(128,128,128,0.3);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(128,128,128,0.7);
+}
+
+.project_badge {
+    background:#2e4b32;
+}
+
+.project_badge a {
+    font-size: small;
+}
+
+.project_badge .name_span {
+    color:rgb(155, 155, 155);
+}
+
+.project_badge .name_span:hover {
+    color:rgb(223, 223, 223);
+}
+
+.tag_badge {
+    background:#403020;
+}
+
+.tag_badge a {
+    font-size: small;
+}
+
+.tag_badge .name_span {
+    color:rgb(155, 155, 155);
+}
+
+.tag_badge .name_span:hover {
+    color:rgb(223, 223, 223);
+}
+
+.level_span.new_rm {
+    color: rgb(70, 138, 138);
+}
+
+.level_span.hot_rm {
+    color: rgb(138, 70, 70);
+}
+
+.level_span.green_rm {
+    color: rgb(92, 121, 62);
+}
+
+.level_span.violet_rm {
+    color: rgb(95, 65, 122);
+}
+
+.level_span.brown_rm {
+    color: rgb(90, 65, 47);
+}
+
+input {
+    color: white !important;
+    background-color: #302a2a !important;
+}
+
+input:focus {
+    color: white;
+    background-color: #302a2a;
+}
+
+select {
+    color: white !important;
+    background-color: #302a2a !important;
+}
+
+select:focus {
+    color: white;
+    background-color: #302a2a;
+}
+
+#fadeLayer {
+    position:fixed;
+    top:0px;
+    left:0px;
+  
+    width:100%;
+    height:100%;
+  
+    background-color:#000000;
+    opacity:0.8;
+    display:none;
+    z-index:1;
+}
+
+.material-icons.md-12 { font-size: 12px; }
+.material-icons.md-15 { font-size: 15px; }
+.material-icons.md-18 { font-size: 18px; }
+.material-icons.md-24 { font-size: 24px; }
+.material-icons.md-36 { font-size: 36px; }
+.material-icons.md-48 { font-size: 48px; }
+
+
+.container_how_to_use {
+    color:rgb(155, 155, 155);
+}
+
+.container_how_to_use p {
+    margin-bottom:2rem;
+}

@@ -1,0 +1,32 @@
+{% load i18n static %}
+<!DOCTYPE html>{% get_current_language as LANGUAGE_CODE %}
+<html lang='{{ LANGUAGE_CODE|default:" en-us" }}'>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="{% static 'cms/css/bootstrap.min.css' %}">
+  {% block extra_css %}{% endblock %}
+  <title>{% block title %}first_nickname{% endblock %}</title>
+</head>
+
+<body class="text-light bg-dark">
+  <div class="container">
+    <div class="p-5">
+      <h3>ニックネームの入力</h3>
+      <p>ニックネームは公開されます。後から変更可能です。</p>
+      <form action='{% url "social:complete" backend=partial_backend_name %}' method="post" role="form">
+        <div class="input-group mb-3">
+            <span class="input-group-text" id="basic-addon1">ニックネーム</span>
+            <input type="text" name="nickname" class="form-control" placeholder="Nickname" aria-label="Nickname" aria-describedby="basic-addon1">
+        </div>
+        <button>確定</button>
+    </form>
+    </div>
+  </div>
+  <script src="{% static 'cms/js/jquery-3.6.1.min.js' %}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js" ></script>
+  {% block extra_js %}{% endblock %}
+</body>
+
+</html>

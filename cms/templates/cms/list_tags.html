@@ -1,0 +1,34 @@
+{% extends "cms/base.html" %}
+
+{% block extra_css %}
+{% endblock %}
+
+
+{% block title %}タグの一覧{% endblock title %}
+
+{% block content %}
+<h4 class="mt-4 border-bottom"><i class="bi bi-tag-fill me-3"></i>タグの一覧 <small class="text-muted ml-3">ユーザ: {{ user.nickname }}</small></h4>
+
+<div id="tag_list_wrapper"></div>
+
+<a href="{% url 'users:user_dashboard' %}" class="btn btn-secondary btn-sm">戻る</a>
+
+
+
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(() => {
+  
+  init_tag_list(filters = {
+      limit:10,
+  });
+
+});
+</script>
+{% endblock %}

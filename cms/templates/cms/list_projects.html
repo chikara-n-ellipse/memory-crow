@@ -1,0 +1,40 @@
+{% extends "cms/base.html" %}
+
+{% block extra_css %}
+{% endblock %}
+
+
+{% block title %}プロジェクトの一覧{% endblock title %}
+
+{% block content %}
+<h4 class="mt-4 border-bottom"><i class="bi bi-flag-fill me-3"></i>プロジェクトの一覧 <small class="text-muted ml-3">ユーザ: {{ user.nickname }}</small></h4>
+
+<div id="project_list_wrapper"></div>
+
+<a href="{% url 'users:user_dashboard' %}" class="btn btn-secondary btn-sm">戻る</a>
+  
+
+    
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(() => {
+
+  // ダイアログ初期化
+  $(`.dialog_container`).html(get_confirmation_dialog_html());
+  
+  init_project_list(filters = {
+      limit:10,
+  });
+
+});
+
+
+
+</script>
+{% endblock %}

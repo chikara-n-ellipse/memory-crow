@@ -1,0 +1,43 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}
+ユーザの編集
+{% endblock title %}
+
+{% block content %}
+<h4 class="mt-4 mb-5 border-bottom"><i class="material-icons md-18 me-2" style="position:relative;top:3px">manage_accounts</i>ユーザ設定</h4>
+<form action="{% url 'users:edit_userconf' %}?{{ action_parameters }}" method="post">
+  {% csrf_token %}
+  {{ form.media }}
+  {{ form }}
+  <div class="form-group row">
+    <div class="offset-md-3 col-md-9">
+      <button id="submit_button" type="submit" class="btn btn-primary m-2">送信</button>
+    </div>
+  </div>
+</form>
+{% if next %}<a href="{{ next }}" class="btn btn-secondary btn-sm">戻る</a>{% endif %}
+{% endblock content %}
+
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(()=>{
+  
+  $(document).keydown((e)=>{
+    if(e.ctrlKey && e.key=="Enter"){
+      $("#submit_button").click()
+    }
+  });
+
+  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+  const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+  
+});
+</script>
+{% endblock %}

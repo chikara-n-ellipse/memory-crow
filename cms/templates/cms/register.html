@@ -1,0 +1,25 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}新規登録{% endblock title %}
+
+{% block content %}
+<h1>新規登録</h1>
+
+{% if AccountCreate %}
+<h2>登録が完了しました！</h2>
+<a href="{% url 'users:user_dashboard'%}" class="btn btn-primary btn-sm">{{user.nickname}}のマイページ</a>
+
+{% else %}
+<div class="reg">
+    <form enctype="multipart/form-data" method="post">
+        <table class="reg_form table table-dark">
+            {% csrf_token %}
+            {{ account_form.as_table }}
+        </table>
+        <button type="button" class="btn btn-primary"><input class="btn text-light" type="submit" name="" value="登録"></button>
+    </form>
+</div>
+アカウントをお持ちの方は<a href="{% url 'users:login' %}" class="btn btn-secondary btn-sm">ログイン</a>
+{% endif %}
+{% endblock content %}

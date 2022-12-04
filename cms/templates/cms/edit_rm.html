@@ -1,0 +1,434 @@
+{% extends "cms/base.html" %}
+
+
+{% block title %}復習管理の編集{% endblock title %}
+
+{% block content %}
+    <h4 class="mt-4 mb-5 border-bottom"><i class="bi bi-stopwatch me-3"></i>復習管理の編集</h4>
+    <div class="container border mb-5 p-4">
+      <h5>Q&A</h5>
+      <div class="row">
+        <div class="question_filed_container col"></div>
+        <div class="answer_filed_container col"></div>
+      </div>
+    </div>
+    <!-- <form action="{% url 'cms:edit_rm' rm_id=rm_id %}?{{ action_parameters }}" 
+      class="form container" method="post"> -->
+    <form class="container">
+      {% csrf_token %}
+
+      <div class="row mb-5">
+        <label class="text-muted col-md-2" for="need_session_select">
+          要セッション指定
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="一定の環境が無いと学習ができないようなQ&Aに対して「要セッション」を指定します。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <select id="need_session_select" class="form-select" aria-label="Default select example">
+            <option value="false" {% if rm.need_session == 0 %}selected{% endif %}>隙間時間</option>
+            <option value="true" {% if rm.need_session == 1 %}selected{% endif %}>要セッション指定</option>
+          </select>
+          <div id="need_session_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="is_active_select">
+          活動状態
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="カードの学習を一時的に止めたい場合に「非アクティブ」に設定します。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <select id="is_active_select" class="form-select" aria-label="Default select example">
+            <option value="true" {% if rm.is_active %}selected{% endif %}>アクティブ</option>
+            <option value="false" {% if not rm.is_active %}selected{% endif %}>非アクティブ</option>
+          </select>
+          <div id="is_active_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="ul_review_interval_input">
+          上限復習間隔（日）
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="この日数よりも復習間隔が長くならないようにスケジュールされます。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="ul_review_interval_input" type="number" min="0" max="36500" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.ul_review_interval.days}}">
+          <div id="ul_review_interval_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="ingestion_level_input">
+          摂取レベル
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="学習初期の定着レベルが0のカードの学習状態を表します。
+              新規カードでは0、ng判定後のカードは1、それ以外は2以上の値を取ります。
+              判定の際に定着レベルが0以外の値のときは摂取レベルの値は無視されます。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="ingestion_level_input" type="number" min="0" max="7" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.ingestion_level}}">
+          <div id="ingestion_level_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="absorption_level_input">
+          定着レベル
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="記憶がどれだけ定着しているかを表すレベルです。
+              定着レベルが0のときは数分レベルでの間隔でスケジューリングされます。
+              定着レベルが1のときは復習間隔が1日になります。
+              その後定着レベルが1上がるたびに復習間隔は約2.5倍になります（デフォルトの場合）。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="absorption_level_input" type="number" min="0" max="12" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.absorption_level}}">
+          <div id="absorption_level_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="interval_increase_rate_input">
+          間隔増加率
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="定着レベルが１上がったときに復習間隔を何倍にするかの値です。
+              デフォルトでは2.5です。1.1から4.0までの値を設定できます。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="interval_increase_rate_input" type="number" min="1.1" max="4.0" step="0.001" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.interval_increase_rate}}">
+          <div id="interval_increase_rate_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="actual_review_interval_input">
+          実際復習間隔
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="定着レベル・間隔増加率から計算された「標準復習間隔」に乱数を加算した値です。
+              前回の学習日時（最終復習日時）にこの値を加算した日時が次回復習日としてスケジュールされます。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="actual_review_interval_input" type="number" min="0" max="36500" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.actual_review_interval.days }}">
+          <div id="actual_review_interval_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="last_reviewed_at_input">
+          最終復習日時
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="最後に復習した日時です。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="last_reviewed_at_input" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.last_reviewed_at |date:'Y-m-j H:i:s' }}">
+          <div id="last_reviewed_at_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="postpone_to_input">
+          延期先日時
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="延期先日時を過ぎていないQ&Aはラーニングにおいて出題されません。
+              延期先日時は定着レベル0のカード（新規カード・Hotカード）を学習する際に
+              1分後や10分後（デフォルト値）に再出題するために設定される他、判定で「スキップ」を選択した場合にも
+              設定されます。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="postpone_to_input" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.postpone_to |date:'Y-m-j H:i:s' }}">
+          <div id="postpone_to_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="importance_input">
+          重要度
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="重要度を0から10まで（デフォルトは3）で設定できます。
+              ラーニングでは学習対象を重要度で絞り込むことが可能です。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="importance_input" type="number" min="0" max="10" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.importance}}">
+          <div id="importance_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="estimated_time_input">
+          予想所要時間（秒）
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="estimated_time_input"  type="number" min="0" max="86400" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.estimated_time.seconds }}">
+          <div id="estimated_time_error" class="invalid-feedback"></div>
+        </div>
+
+        <label class="text-muted col-md-2" for="highest_absorption_level_input">
+          最高定着レベル
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="カード作成時から現在までで最も高くなった時の定着レベルの値です。
+                ngになったカードであっても最高定着レベルがある程度高いものは
+                比較的容易にレベルを上げられる場合が多いです。"></i>
+        </label>
+        <div class="col-md-4 mb-5">
+          <input id="highest_absorption_level_input" type="number" min="0" max="12" class="form-control" placeholder="" aria-label="" 
+            value="{{ rm.highest_absorption_level}}">
+          <div id="highest_absorption_level_error" class="invalid-feedback"></div>
+        </div>
+      </div>
+
+      <div class="row mb-5">
+        <label class="text-muted col-md-3" for="dependency_rm_set_select">
+          依存先復習管理
+          <i class="bi-info-circle-fill ms-2" style="font-size: 0.8em;" 
+              type="button" data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top" 
+              data-bs-content="依存先復習管理に指定された復習管理のQ&Aが全てある程度
+              定着するまで（デフォルトではAL=4になるまで）このQ&Aはラーニングで出題されなくなります。
+              ラーニングの設定でこの機能は無効化できます。
+              複数の復習管理を指定できます。
+              依存関係が循環するといずれも出題されなくなるので注意してください。"></i>
+        </label>
+        <div class="deprms_wrapper col-md-9 col-xl-6 mb-5">
+          <select id="dependency_rm_set_select" name="deprms" class="rm_select select2-hidden-accessible" 
+              data-select2-id="select2-data-dependency_rm_set_select" tabindex="-1" aria-hidden="true" multiple>
+            {% for deprm in rm.dependency_rm_set.all %}
+              <option value="{{ deprm.id}}" selected>{{ deprm }}</option>
+            {% endfor %}
+          </select>
+          <div id="deprms_error" class="invalid-feedback"></div>
+        </div>
+      </div>
+
+      <div class="row mb-5">
+          <button id="submit_button" type="button" class="btn btn-primary m-2">送信</button>
+      </div>
+    </form>
+{% if next %}<a href="{{ next }}" class="btn btn-secondary btn-sm">戻る</a>{% endif %}
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+
+const token = "{{ user.token }}";
+const request_user = JSON.parse('{{ request_user_json | safe}}'.slice(1,-1));
+
+$(()=>{
+
+  let rm_id = "{{ rm.id }}";
+  let rm_old = JSON.parse('{{rm_json | safe}}'.slice(1,-1));
+  
+  $(document).keydown((e)=>{
+    if(e.ctrlKey && e.key=="Enter"){
+      $("#submit_button").click();
+    }
+  });
+
+  $( "#last_reviewed_at_input" ).datetimepicker({
+    theme:'dark',
+    format:'Y-m-d H:i'
+  });
+
+  $( "#postpone_to_input" ).datetimepicker({
+    theme:'dark',
+    format:'Y-m-d H:i'
+  });
+  
+  init_rm_select(dropdown_parent=".deprms_wrapper", multiple=true);
+
+  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+  const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+
+  $(".question_filed_container").html(`
+    ${get_mdfield_html_in_grid(
+      rm_old.qa.question_field.content,
+      rm_old.qa.question_field.name,
+      rm_old.qa.question_field.read_aloud_lang,
+      `question_field_textarea_${rm_id}`,
+      ['md_to_html_target', `md_to_html_target_${rm_id}`, `md_to_html_target_${rm_id}_question_field`, 'question_field_box'],
+      text_color=null,
+      border_color=rm_old.qa.question_field.oic_color,
+    )}
+  `);
+
+  $(".answer_filed_container").html(`
+    ${get_mdfield_html_in_grid(
+      rm_old.qa.answer_field.content,
+      rm_old.qa.answer_field.name,
+      rm_old.qa.answer_field.read_aloud_lang,
+      `answer_field_textarea_${rm_id}`,
+      ['md_to_html_target', `md_to_html_target_${rm_id}`, `md_to_html_target_${rm_id}_answer_field`,'answer_field_box'],
+      text_color=null,
+      border_color=rm_old.qa.answer_field.oic_color,
+    )}
+  `);
+
+  $('.md_preview_button').click();
+
+  $('#submit_button').on('click', ()=>{
+
+    const rm = {
+      need_session:                     $('#need_session_select').val(),
+      is_active:                      $('#is_active_select').val(),
+      ul_review_interval:          $('#ul_review_interval_input').val(),
+      ingestion_level:             $('#ingestion_level_input').val(),
+      absorption_level:            $('#absorption_level_input').val(),
+      interval_increase_rate:      $('#interval_increase_rate_input').val(),
+      actual_review_interval:      $('#actual_review_interval_input').val(),
+      last_reviewed_at:            $('#last_reviewed_at_input').val(),
+      postpone_to:                 $('#postpone_to_input').val(),
+      importance:                  $('#importance_input').val(),
+      estimated_time:              $('#estimated_time_input').val(),
+      highest_absorption_level:    $('#highest_absorption_level_input').val(),
+      dependency_rm_id_set:    $('#dependency_rm_set_select').val(),
+    };
+
+    if(rm_id)rm.id = rm_id;
+
+    // 以下バリデーション
+
+    let val, num, date;
+    let is_all_valid = true;
+    let l;
+
+    $('input').removeClass('is-invalid');
+
+    if( ! (rm.need_session=='true' || rm.need_session=='false' )){
+      alert(`要セッション指定の値が不正です。入力: ${rm.need_session}`);
+      is_all_valid = false;
+    }
+
+    
+    if( ! (rm.is_active=='true' || rm.is_active=='false' )){
+      alert(`活動状態の値が不正です。'true'または'false'を指定してください。入力: ${rm.is_active}`);
+      is_all_valid = false;
+    }
+
+    num = parseInt(rm.ul_review_interval)
+    if(num < 0 || num > 36500){
+      let error_msg = `上限復習間隔の値が不正です。0から36500の間の整数を入力してください。入力: ${rm.ul_review_interval}`;
+      is_all_valid = false;
+      $('#ul_review_interval_input').addClass('is-invalid');
+      $('#ul_review_interval_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    num = parseInt(rm.ingestion_level)
+    if(num < 0 || num > 7){
+      let error_msg = `摂取レベルの値が不正です。0から7の間の整数を入力してください。入力: ${rm.ingestion_level}`;
+      is_all_valid = false;
+      $('#ingestion_level_input').addClass('is-invalid');
+      $('#ingestion_level_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    num = parseInt(rm.absorption_level)
+    if(num < 0 || num > 12){
+      let error_msg = `定着レベルの値が不正です。0から12の間の整数を入力してください。入力: ${rm.absorption_level}`;
+      is_all_valid = false;
+      $('#absorption_level_input').addClass('is-invalid');
+      $('#absorption_level_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    num = Number(rm.interval_increase_rate)
+    if(num < 1.1 || num > 4.0){
+      let error_msg = `間隔増加率の値が不正です。0から4.0の間の整数を入力してください。入力: ${rm.interval_increase_rate}`;
+      is_all_valid = false;
+      $('#interval_increase_rate_input').addClass('is-invalid');
+      $('#interval_increase_rate_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    num = parseInt(rm.actual_review_interval)
+    if(num < 0 || num > 36500){
+      let error_msg = `実際復習間隔の値が不正です。0から36500の間の整数を入力してください。入力: ${rm.actual_review_interval}`;
+      is_all_valid = false;
+      $('#actual_review_interval_input').addClass('is-invalid');
+      $('#actual_review_interval_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    if(rm.last_reviewed_at){
+      date = new Date(rm.last_reviewed_at)
+      if(isNaN(date.getDate())){
+        let error_msg = `最終復習日時の値が不正です。日付として解釈できません。入力: ${rm.last_reviewed_at}`;
+        is_all_valid = false;
+        $('#last_reviewed_at_input').addClass('is-invalid');
+        $('#last_reviewed_at_error').text(error_msg);
+        alert(error_msg);
+      }else if(date > new Date()){
+        let error_msg = `最終復習日時の値が不正です。未来の時刻は入力できません。入力: ${rm.last_reviewed_at}`;
+        is_all_valid = false;
+        $('#last_reviewed_at_input').addClass('is-invalid');
+        $('#last_reviewed_at_error').text(error_msg);
+        alert(error_msg);
+      }
+    }else{
+      delete rm.last_reviewed_at;
+    }
+
+    date = new Date(rm.postpone_to)
+    if(isNaN(date.getDate())){
+      let error_msg = `延期先日時の値が不正です。日付として解釈できません。入力: ${rm.postpone_to}`;
+      is_all_valid = false;
+      $('#postpone_to_input').addClass('is-invalid');
+      $('#postpone_to_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    num = parseInt(rm.importance)
+    if(num < 0 || num > 10){
+      let error_msg = `重要度の値が不正です。0から10の間の整数を入力してください。入力: ${rm.importance}`;
+      is_all_valid = false;
+      $('#importance_input').addClass('is-invalid');
+      $('#importance_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    num = parseInt(rm.estimated_time)
+    if(num < 0 || num > 86400){
+      let error_msg = `予想所要時間の値が不正です。0から86400の間の整数を入力してください。入力: ${rm.estimated_time}`;
+      is_all_valid = false;
+      $('#estimated_time_input').addClass('is-invalid');
+      $('#estimated_time_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    num = parseInt(rm.highest_absorption_level)
+    if(num < 0 || num > 12){
+      let error_msg = `最高定着レベルの値が不正です。0から12の間の整数を入力してください。入力: ${rm.highest_absorption_level}`;
+      is_all_valid = false;
+      $('#highest_absorption_level_input').addClass('is-invalid');
+      $('#highest_absorption_level_error').text(error_msg);
+      alert(error_msg);
+    }
+
+    if (!is_all_valid) {
+      return;
+    }
+
+    // 提出時のajax通信
+
+    let data = {
+      rm,
+    };
+
+    $.ajax({
+        type: 'POST',
+        url: `/api/update_rm`,
+        data: JSON.stringify(data),
+        beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+    })
+    .done((data)=> {
+        location = '{% if next %}{{ next | safe }}{% else %}/cms/list_rms/{% endif %}';
+    })
+    .fail((error)=>{
+        alert('提出処理に失敗しました。');
+    });
+
+  });
+
+
+});
+</script>
+{% endblock %}
