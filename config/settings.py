@@ -26,12 +26,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!oco8z2(56dw-*m++l8@cx5q131)7$#k-yh&p926tls21a&d!u'
+SECRET_KEY = private["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+DEBUG = private["DEBUG"]
+ALLOWED_HOSTS = private["ALLOWED_HOSTS"]
 
 
 # Application definition
@@ -160,7 +159,7 @@ DATABASES = {
         # 'NAME': str(os.path.join(BASE_DIR, "db.sqlite3")),
 
         'ENGINE': 'django.db.backends.postgresql_psycopg2', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'mydb', #str(os.path.join(BASE_DIR, "db.sqlite3")),                      # Or path to database file if using sqlite3.
+        'NAME': private["db_name"], #str(os.path.join(BASE_DIR, "db.sqlite3")),                      # Or path to database file if using sqlite3.
         # The following settings are not used with sqlite3:
         'USER': private["db_username"],
         'PASSWORD': private["db_password"],
