@@ -5,7 +5,7 @@ from cms.models import Project, ProjectLearningManagement,Tag, Card, CardField, 
 from django.contrib.auth import get_user_model
 from django.shortcuts import render, get_object_or_404, redirect
 from typing import List, Dict, Any, Union, Tuple
-from ninja.security import HttpBearer
+from ninja.security import HttpBearer, django_auth
 from ninja.errors import ValidationError
 from django.core.exceptions import ValidationError as _ValidationError
 from uuid import UUID
@@ -19,7 +19,7 @@ from django.db.models import (
         DateField, DurationField, Value, CharField, OuterRef,
     )
 from django.db.models.functions import Cast, TruncMonth
-    
+
 
 from cms.schema import *
 
@@ -42,6 +42,8 @@ class LoginRequiredAuth(HttpBearer):
 
 class PublicAuth(HttpBearer):
     def authenticate(self, request, token):
+        return "ok"
+        print("public auth aaaaa")
         if request.user.is_authenticated:
             return "django_auth"
         else:
@@ -55,7 +57,7 @@ class PublicAuth(HttpBearer):
         return "Anonymous"
 
 
-api = NinjaAPI(auth=LoginRequiredAuth())
+api = NinjaAPI(csrf=True)
 
 
 def validate_with_ninja(validators, value):
@@ -85,7 +87,7 @@ def get_order_by_strs(f_order_by, f_order_dir, availables=['created_at', 'id']):
 #     if username == "admin" and password == "giraffethinnknslong":
 #         return {"token": "supersecret"}
 
-# @api.exception_handler(ValidationError)
+# @api.exception_handler(ValidationError, auth=django_auth)
 # def validation_errors(request, exc):
 #     return api.create_response(
 #         request,
@@ -95,14 +97,14 @@ def get_order_by_strs(f_order_by, f_order_dir, availables=['created_at', 'id']):
 
 
 """ ユーザ単一取得 """
-@api.get("/get_user/{user_id}", response=PublicUserOutSchema, auth=PublicAuth())
+@api.get("/get_user/{user_id}", response=PublicUserOutSchema, auth=None)
 def get_user(request, user_id: UUID):
     user = get_object_or_404(User, id=user_id)
     return user
 
 
 """ ユーザのデフォールトラーニングURLを更新 """
-@api.get("/update_user__default_learning_url")
+@api.get("/update_user__default_learning_url", auth=django_auth)
 def get_user(request, default_learning_url: str):
     request.user.default_learning_url = default_learning_url
     request.user.save()
@@ -110,7 +112,7 @@ def get_user(request, default_learning_url: str):
 
 
 """ プロジェクト新規作成・更新 """
-@api.post("/update_project", response=ProjectOutSchema)
+@api.post("/update_project", response=ProjectOutSchema, auth=django_auth)
 def add_project(request, payload: ProjectUpdateRequestSchema):
     """
     プロジェクトを新規作成または修正する。
@@ -177,7 +179,7 @@ def add_project(request, payload: ProjectUpdateRequestSchema):
 
 
 """ 既存プロジェクトのブックマーク追加 """
-@api.post("/add_project_bookmark/{project_id}", response=List[Union[ProjectOutSchema, PlmOutSchema]])
+@api.post("/add_project_bookmark/{project_id}", response=List[Union[ProjectOutSchema, PlmOutSchema]], auth=django_auth)
 def add_project_bookmark(request, project_id):
     """
     プロジェクトブックマーク追加。
@@ -202,7 +204,7 @@ def add_project_bookmark(request, project_id):
 
 
 """ 既存プロジェクトのブックマーク解除 """
-@api.delete("/remove_project_bookmark/{project_id}", response=ProjectOutSchema)
+@api.delete("/remove_project_bookmark/{project_id}", response=ProjectOutSchema, auth=django_auth)
 def remove_project_bookmark(request, project_id):
     """
     プロジェクトブックマーク解除。
@@ -221,7 +223,7 @@ def remove_project_bookmark(request, project_id):
 
 
 """ プロジェクト単一取得 """
-@api.get("/get_project/{project_id}", response=ProjectRichOutSchema, auth=PublicAuth())
+@api.get("/get_project/{project_id}", response=ProjectRichOutSchema, auth=None)
 def get_project(request, project_id: UUID):
     project = get_object_or_404(Project, id=project_id)
     if project.user != request.user and project.publicity!=1:
@@ -234,7 +236,7 @@ def get_project(request, project_id: UUID):
 
 
 """ プロジェクト一覧取得 """
-@api.get("/get_projects", response=GetProjectsResponseSchema, auth=PublicAuth())
+@api.get("/get_projects", response=GetProjectsResponseSchema, auth=None)
 def get_projects(request, filters: FiltersForGetProjectsSchema = Query(...)):
 
     """ 並べ替え """
@@ -353,7 +355,7 @@ def get_projects(request, filters: FiltersForGetProjectsSchema = Query(...)):
 
 
 """ プロジェクト一括変更（活動状態をセット） """
-@api.patch("/patch_projects__set_is_active", response=List[UUID])
+@api.patch("/patch_projects__set_is_active", response=List[UUID], auth=django_auth)
 def patch_projects__set_is_active(request, project_ids: List[str], is_active: bool):
     plm_set = ProjectLearningManagement.objects.filter(user=request.user, project__id__in=project_ids)
     plm_set.update(is_active=is_active)
@@ -362,7 +364,7 @@ def patch_projects__set_is_active(request, project_ids: List[str], is_active: bo
 
 
 """ プロジェクト一括変更（スターをセット） """
-@api.patch("/patch_projects__set_star", response=List[UUID])
+@api.patch("/patch_projects__set_star", response=List[UUID], auth=django_auth)
 def patch_projects__set_star(request, project_ids: List[str], star: int):
     plm_set = ProjectLearningManagement.objects.filter(user=request.user, project__id__in=project_ids)
     plm_set.update(star=star)
@@ -371,7 +373,7 @@ def patch_projects__set_star(request, project_ids: List[str], star: int):
 
 
 """ プロジェクト一括変更（公開状態をセット） """
-@api.patch("/patch_projects__set_publicity", response=List[UUID])
+@api.patch("/patch_projects__set_publicity", response=List[UUID], auth=django_auth)
 def patch_projects__set_publicity(request, project_ids: List[str], publicity: int):
     projects = Project.objects.filter(user=request.user, id__in=project_ids)
     projects.update(publicity=publicity)
@@ -380,7 +382,7 @@ def patch_projects__set_publicity(request, project_ids: List[str], publicity: in
 
 
 """ プロジェクト一括変更（親プロジェクトをセット） """
-@api.patch("/patch_projects__set_parent", response=List[UUID])
+@api.patch("/patch_projects__set_parent", response=List[UUID], auth=django_auth)
 def patch_projects__set_parent(request, project_ids: List[str], parent_id: UUID = None):
     projects = Project.objects.filter(user=request.user, id__in=project_ids)
     if parent_id:
@@ -396,7 +398,7 @@ def patch_projects__set_parent(request, project_ids: List[str], parent_id: UUID 
 
 
 """ プロジェクト削除 """
-@api.delete("/delete_project/{project_id}", response=ProjectOutSchema)
+@api.delete("/delete_project/{project_id}", response=ProjectOutSchema, auth=django_auth)
 def delete_project(request, project_id: UUID):
     project = get_object_or_404(Project, id=project_id)
     project.delete()
@@ -404,7 +406,7 @@ def delete_project(request, project_id: UUID):
 
 
 """ プロジェクト一括削除 """
-@api.delete("/delete_projects", response=List[UUID])
+@api.delete("/delete_projects", response=List[UUID], auth=django_auth)
 def delete_projects(request, project_ids: List[UUID]):
     projects = Project.objects.filter(user=request.user, id__in=project_ids)
     deleted_project_ids = [p.id for p in projects]
@@ -413,7 +415,7 @@ def delete_projects(request, project_ids: List[UUID]):
 
 
 """ タグ新規作成・更新 """
-@api.post("/update_tag", response=TagOutSchema)
+@api.post("/update_tag", response=TagOutSchema, auth=django_auth)
 def add_tag(request, payload: TagUpdateRequestSchema):
     tag_in = payload.tag
     if tag_in.id:
@@ -447,7 +449,7 @@ def add_tag(request, payload: TagUpdateRequestSchema):
 
 
 """ タグ単一取得 """
-@api.get("/get_tag/{tag_id}", response=TagRichOutSchema, auth=PublicAuth())
+@api.get("/get_tag/{tag_id}", response=TagRichOutSchema, auth=None)
 def get_tag(request, tag_id: UUID):
     tag = get_object_or_404(Tag, id=tag_id)
     if tag.user != request.user and tag.publicity!=1:
@@ -459,7 +461,7 @@ def get_tag(request, tag_id: UUID):
 
 
 """ タグ一覧取得 """
-@api.get("/get_tags", response=GetTagsResponseSchema, auth=PublicAuth())
+@api.get("/get_tags", response=GetTagsResponseSchema, auth=None)
 def get_tags(request, filters: FiltersForGetTagsSchema = Query(...)):
 
     """ 並べ替え """
@@ -562,7 +564,7 @@ def get_tags(request, filters: FiltersForGetTagsSchema = Query(...)):
 
 
 """ タグ一括変更（スターをセット） """
-@api.patch("/patch_tags__set_star", response=List[UUID])
+@api.patch("/patch_tags__set_star", response=List[UUID], auth=django_auth)
 def patch_tags(request, tag_ids: List[UUID], star: int):
     tag_ids = tag_ids
     tags = Tag.objects.filter(user=request.user, id__in=tag_ids)
@@ -572,7 +574,7 @@ def patch_tags(request, tag_ids: List[UUID], star: int):
 
 
 """ タグ一括変更（親タグをセット） """
-@api.patch("/patch_tags__set_parent", response=List[UUID])
+@api.patch("/patch_tags__set_parent", response=List[UUID], auth=django_auth)
 def patch_tags(request, tag_ids: List[UUID], parent_id: UUID = None):
     tag_ids = tag_ids
     tags = Tag.objects.filter(user=request.user, id__in=tag_ids)
@@ -588,7 +590,7 @@ def patch_tags(request, tag_ids: List[UUID], parent_id: UUID = None):
 
 
 """ タグ削除 """
-@api.delete("/delete_tag/{tag_id}", response=TagOutSchema)
+@api.delete("/delete_tag/{tag_id}", response=TagOutSchema, auth=django_auth)
 def delete_tag(request, tag_id: UUID):
     tag = get_object_or_404(Tag, id=tag_id)
     tag.delete()
@@ -596,7 +598,7 @@ def delete_tag(request, tag_id: UUID):
 
 
 """ タグ一括削除 """
-@api.delete("/delete_tags", response=List[UUID])
+@api.delete("/delete_tags", response=List[UUID], auth=django_auth)
 def delete_tags(request, tag_ids: List[UUID]):
     tags = Tag.objects.filter(user=request.user, id__in=tag_ids)
     deleted_tag_ids = [p.id for p in tags]
@@ -605,7 +607,7 @@ def delete_tags(request, tag_ids: List[UUID]):
 
 
 """ カード新規作成・更新 """
-@api.post("/update_card", response=CardOutSchema)
+@api.post("/update_card", response=CardOutSchema, auth=django_auth)
 def update_card(request, payload: CardUpdateRequestSchema):
     _card = payload.card
     if _card.id:
@@ -744,7 +746,7 @@ def update_card(request, payload: CardUpdateRequestSchema):
 
 
 """ TSVからのカード一括作成 """
-@api.post("/add_cards_from_tsv", response=List[UUID])
+@api.post("/add_cards_from_tsv", response=List[UUID], auth=django_auth)
 def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
     _cards = input_cards
     cards = []
@@ -927,7 +929,7 @@ def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
 
 
 """ カード単一取得 """
-@api.get("/get_card/{card_id}", response=CardRichOutSchema, auth=PublicAuth())
+@api.get("/get_card/{card_id}", response=CardRichOutSchema, auth=None)
 def get_card(request, card_id: UUID):
     card = get_object_or_404(Card, id=card_id)
     if card.user != request.user and card.publicity!=1:
@@ -941,7 +943,7 @@ def get_card(request, card_id: UUID):
 
 
 """ カード一覧取得 """
-@api.get("/get_cards", response=GetCardsResponseSchema, auth=PublicAuth())
+@api.get("/get_cards", response=GetCardsResponseSchema, auth=None)
 def get_cards(request, filters: FiltersForGetCardsSchema = Query(...)):
 
     """ 並べ替え """
@@ -1074,7 +1076,7 @@ def get_cards(request, filters: FiltersForGetCardsSchema = Query(...)):
 
 
 """ カード削除 """
-@api.delete("/delete_card/{card_id}", response=CardOutSchema)
+@api.delete("/delete_card/{card_id}", response=CardOutSchema, auth=django_auth)
 def delete_card(request, card_id: UUID):
     card = get_object_or_404(Card, id=card_id)
     card.delete()
@@ -1082,7 +1084,7 @@ def delete_card(request, card_id: UUID):
 
 
 """ 複数カードにプロジェクトを一括して設定 """
-@api.patch("/patch_cards__set_project", response=List[UUID])
+@api.patch("/patch_cards__set_project", response=List[UUID], auth=django_auth)
 def patch_cards__set_project(request, card_ids: List[UUID], project_id: UUID=None):
     cards = Card.objects.filter(user=request.user, id__in=card_ids)
     if project_id:
@@ -1095,7 +1097,7 @@ def patch_cards__set_project(request, card_ids: List[UUID], project_id: UUID=Non
 
 
 """ 複数カードにタグを一括して追加 """
-@api.patch("/patch_cards__add_tags", response=List[UUID])
+@api.patch("/patch_cards__add_tags", response=List[UUID], auth=django_auth)
 def patch_cards__add_tags(request, card_ids: List[UUID], tag_ids: List[UUID]):
     cards = Card.objects.filter(user=request.user, id__in=card_ids)
     cleaned_tags = []
@@ -1113,7 +1115,7 @@ def patch_cards__add_tags(request, card_ids: List[UUID], tag_ids: List[UUID]):
 
 
 """ 複数カードからタグを一括して除外 """
-@api.patch("/patch_cards__remove_tags", response=List[UUID])
+@api.patch("/patch_cards__remove_tags", response=List[UUID], auth=django_auth)
 def patch_cards__remove_tags(request, card_ids: List[UUID], tag_ids: List[UUID]):
     cards = Card.objects.filter(user=request.user, id__in=card_ids)
     cleaned_tags = []
@@ -1131,7 +1133,7 @@ def patch_cards__remove_tags(request, card_ids: List[UUID], tag_ids: List[UUID])
 
 
 """ 複数カードにタグを一括して設定（既存のタグ除外後） """
-@api.patch("/patch_cards__set_tags", response=List[UUID])
+@api.patch("/patch_cards__set_tags", response=List[UUID], auth=django_auth)
 def patch_cards__set_tags(request, card_ids: List[UUID], tag_ids: List[UUID]):
     cards = Card.objects.filter(user=request.user, id__in=card_ids)
     cleaned_tags = []
@@ -1151,7 +1153,7 @@ def patch_cards__set_tags(request, card_ids: List[UUID], tag_ids: List[UUID]):
 
 
 """ 複数カードに公開状態を一括して設定 """
-@api.patch("/patch_cards__set_publicity", response=List[UUID])
+@api.patch("/patch_cards__set_publicity", response=List[UUID], auth=django_auth)
 def patch_cards__set_publicity(request, card_ids: List[UUID], publicity: int):
     if publicity not in [0,1]:
         raise ValidationError([{"message":"'publicity' should be one of [0, 1]"}])
@@ -1167,7 +1169,7 @@ def patch_cards__set_publicity(request, card_ids: List[UUID], publicity: int):
 
 
 """ # 複数復習管理IDを指定して、対応する複数カードにプロジェクトを一括して設定 """
-# @api.patch("/patch_cards__set_project_by_rm_ids", response=List[UUID])
+# @api.patch("/patch_cards__set_project_by_rm_ids", response=List[UUID], auth=django_auth)
 # def patch_cards__set_project_by_rm_ids(request, rm_ids: List[UUID], project_id: UUID=None):
 #     if project_id:
 #         project = get_object_or_404(Project, id=project_id)
@@ -1193,7 +1195,7 @@ def patch_cards__set_publicity(request, card_ids: List[UUID], publicity: int):
 
 
 # # 複数復習管理IDを指定して、対応する複数カードにタグを一括して追加
-# @api.patch("/patch_cards__add_tags_by_rm_ids", response=List[UUID])
+# @api.patch("/patch_cards__add_tags_by_rm_ids", response=List[UUID], auth=django_auth)
 # def patch_cards__add_tags_by_rm_ids(request, rm_ids: List[UUID], tag_ids: List[UUID]):
 #     # 復習管理の取得
 #     qa_set = qa.objects.filter(user=request.user, id__in=rm_ids)
@@ -1220,7 +1222,7 @@ def patch_cards__set_publicity(request, card_ids: List[UUID], publicity: int):
 
 
 # # 複数復習管理IDを指定して、対応する複数カードからタグを一括して除外
-# @api.patch("/patch_cards__remove_tags_by_rm_ids", response=List[UUID])
+# @api.patch("/patch_cards__remove_tags_by_rm_ids", response=List[UUID], auth=django_auth)
 # def patch_cards__remove_tags_by_rm_ids(request, rm_ids: List[UUID], tag_ids: List[UUID]):
 #     # 復習管理の取得
 #     qa_set = qa.objects.filter(user=request.user, id__in=rm_ids)
@@ -1247,7 +1249,7 @@ def patch_cards__set_publicity(request, card_ids: List[UUID], publicity: int):
 
 
 # # 複数復習管理IDを指定して、対応する複数カードにタグを一括して設定（既存のタグ除外後）
-# @api.patch("/patch_cards__set_tags_by_rm_ids", response=List[UUID])
+# @api.patch("/patch_cards__set_tags_by_rm_ids", response=List[UUID], auth=django_auth)
 # def patch_cards__set_tags_by_rm_ids(request, rm_ids: List[UUID], tag_ids: List[UUID]):
 #     # 復習管理の取得
 #     qa_set = qa.objects.filter(user=request.user, id__in=rm_ids)
@@ -1275,7 +1277,7 @@ def patch_cards__set_publicity(request, card_ids: List[UUID], publicity: int):
 
 
 """ カード一括削除 """
-@api.delete("/delete_cards", response=List[UUID])
+@api.delete("/delete_cards", response=List[UUID], auth=django_auth)
 def delete_cards(request, card_ids: List[UUID]):
     cards = Card.objects.filter(user=request.user, id__in=card_ids)
     deleted_card_ids = [card.id for card in cards]
@@ -1284,7 +1286,7 @@ def delete_cards(request, card_ids: List[UUID]):
 
 
 """ 複数rm IDを指定して、対応する複数カード一括削除 """
-@api.delete("/delete_cards_from_rm_ids", response=List[UUID])
+@api.delete("/delete_cards_from_rm_ids", response=List[UUID], auth=django_auth)
 def delete_cards_from_rm_ids(request, rm_ids: List[UUID]):
     rm_set = ReviewManagement.objects.filter(user=request.user, id__in=rm_ids, qa__card__user=request.user).\
         select_related('qa', 'qa__card')
@@ -1297,7 +1299,7 @@ def delete_cards_from_rm_ids(request, rm_ids: List[UUID]):
 
 
 """ 復習管理新規作成・更新 """
-@api.post("/update_rm", response=RmOutSchema)
+@api.post("/update_rm", response=RmOutSchema, auth=django_auth)
 def add_rm(request, payload: RmUpdateRequestSchema):
     _rm = payload.rm
     rm = get_object_or_404(ReviewManagement, id=_rm.id, user=request.user)
@@ -1362,7 +1364,7 @@ def add_rm(request, payload: RmUpdateRequestSchema):
 
 
 """ 既存QAのブックマーク追加 """
-@api.post("/add_qa_bookmarks/", response=List[UUID])
+@api.post("/add_qa_bookmarks/", response=List[UUID], auth=django_auth)
 def add_qa_bookmark(request, qa_ids:List[UUID]):
     """
     QAブックマーク追加。
@@ -1384,7 +1386,7 @@ def add_qa_bookmark(request, qa_ids:List[UUID]):
 
 
 """ 既存QAのブックマーク解除 """
-@api.delete("/remove_qa_bookmarks/")
+@api.delete("/remove_qa_bookmarks/", auth=django_auth)
 def remove_qa_bookmarks(request, qa_ids:List[UUID]):
     """
     QAブックマーク解除。
@@ -1396,7 +1398,7 @@ def remove_qa_bookmarks(request, qa_ids:List[UUID]):
 
 
 """ 復習管理単一取得 """
-@api.get("/get_rm/{rm_id}", response=RmRichOutSchema)
+@api.get("/get_rm/{rm_id}", response=RmRichOutSchema, auth=django_auth)
 def get_rm(request, rm_id: UUID):
     rm = get_object_or_404(ReviewManagement, pk=rm_id)
     if rm.user != request.user:
@@ -1406,7 +1408,7 @@ def get_rm(request, rm_id: UUID):
 
 
 """ 復習管理一覧取得 """
-@api.get("/get_rm_set", response=GetqasResponseSchema)
+@api.get("/get_rm_set", response=GetqasResponseSchema, auth=django_auth)
 def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
 
     """ 並べ替え """
@@ -1592,7 +1594,7 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
 
 
 """ 複数復習管理の一括初期化 """
-@api.patch("/patch_rm_set__initialize", response=List[UUID])
+@api.patch("/patch_rm_set__initialize", response=List[UUID], auth=django_auth)
 def patch_rm_set__initialize(request, rm_ids: List[UUID]):
     rm_set = ReviewManagement.objects.filter(user=request.user, id__in=rm_ids)
     rm_set.update(ingestion_level=0, absorption_level=0, highest_absorption_level=0, actual_review_interval=timedelta(days=0))
@@ -1601,7 +1603,7 @@ def patch_rm_set__initialize(request, rm_ids: List[UUID]):
 
 
 """ 複数復習管理に要セッション指定を一括して設定 """
-@api.patch("/patch_rm_set__set_need_session", response=List[UUID])
+@api.patch("/patch_rm_set__set_need_session", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_need_session(request, rm_ids: List[UUID], need_session: bool):
     rm_set = ReviewManagement.objects.filter(user=request.user, id__in=rm_ids)
     rm_set.update(need_session=need_session)
@@ -1610,7 +1612,7 @@ def patch_rm_set__set_need_session(request, rm_ids: List[UUID], need_session: bo
 
 
 """ 複数復習管理に活動状態を一括して設定 """
-@api.patch("/patch_rm_set__set_is_active", response=List[UUID])
+@api.patch("/patch_rm_set__set_is_active", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_is_active(request, rm_ids: List[UUID], is_active: bool):
     rm_set = ReviewManagement.objects.filter(user=request.user, id__in=rm_ids)
     rm_set.update(is_active=is_active)
@@ -1619,7 +1621,7 @@ def patch_rm_set__set_is_active(request, rm_ids: List[UUID], is_active: bool):
 
 
 """ 複数復習管理に上限復習間隔を一括して設定 """
-@api.patch("/patch_rm_set__set_ul_review_interval", response=List[UUID])
+@api.patch("/patch_rm_set__set_ul_review_interval", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_ul_review_interval(request, rm_ids: List[UUID], ul_review_interval: timedelta):
     validator = DurationRangeValidator(min_delta=timedelta(days=0), max_delta=timedelta(days=365*100))
     validate_with_ninja([validator], ul_review_interval)
@@ -1630,7 +1632,7 @@ def patch_rm_set__set_ul_review_interval(request, rm_ids: List[UUID], ul_review_
 
 
 """ 複数復習管理に摂取レベルを一括して設定 """
-@api.patch("/patch_rm_set__set_ingestion_level", response=List[UUID])
+@api.patch("/patch_rm_set__set_ingestion_level", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_ingestion_level(request, rm_ids: List[UUID], ingestion_level: int):
     if not(ingestion_level >= 0 and ingestion_level <= 7):
         raise ValidationError([{"message":"'ingestion_level' should be in the range of 0-7"}])
@@ -1641,7 +1643,7 @@ def patch_rm_set__set_ingestion_level(request, rm_ids: List[UUID], ingestion_lev
 
 
 """ 複数復習管理に定着レベルを一括して設定 """
-@api.patch("/patch_rm_set__set_absorption_level", response=List[UUID])
+@api.patch("/patch_rm_set__set_absorption_level", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_absorption_level(request, rm_ids: List[UUID], absorption_level: int):
     if not(absorption_level >= 0 and absorption_level <= 12):
         raise ValidationError([{"message":"'absorption_level' should be in the range of 0-12"}])
@@ -1652,7 +1654,7 @@ def patch_rm_set__set_absorption_level(request, rm_ids: List[UUID], absorption_l
 
 
 """ 複数復習管理に間隔増加率を一括して設定 """
-@api.patch("/patch_rm_set__set_interval_increase_rate", response=List[UUID])
+@api.patch("/patch_rm_set__set_interval_increase_rate", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_interval_increase_rate(request, rm_ids: List[UUID], interval_increase_rate: float):
     if not(interval_increase_rate >= 1.1 and interval_increase_rate <= 4.0):
         raise ValidationError([{"message":"'interval_increase_rate' should be in the range of 1.1-4.0"}])
@@ -1663,7 +1665,7 @@ def patch_rm_set__set_interval_increase_rate(request, rm_ids: List[UUID], interv
 
 
 """ 複数復習管理に実際復習間隔を一括して設定 """
-@api.patch("/patch_rm_set__set_actual_review_interval", response=List[UUID])
+@api.patch("/patch_rm_set__set_actual_review_interval", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_actual_review_interval(request, rm_ids: List[UUID], actual_review_interval: timedelta):
     validator = DurationRangeValidator(min_delta=timedelta(days=0), max_delta=timedelta(days=365*100))
     validate_with_ninja([validator], actual_review_interval)
@@ -1674,7 +1676,7 @@ def patch_rm_set__set_actual_review_interval(request, rm_ids: List[UUID], actual
 
 
 """ # 複数復習管理に実際復習間隔を標準復習間隔から一括して自動設定 """
-# @api.patch("/patch_rm_set__set_actual_review_interval_from_standard", response=List[UUID])
+# @api.patch("/patch_rm_set__set_actual_review_interval_from_standard", response=List[UUID], auth=django_auth)
 # def patch_rm_set__set_actual_review_interval(request, rm_ids: List[UUID], noise_ratio: int):
 #     if not(noise_ratio >= 0 and noise_ratio <= 0.5):
 #         raise ValidationError([{"message":"'noise_ratio' should be in the range of 0-0.5"}])
@@ -1685,7 +1687,7 @@ def patch_rm_set__set_actual_review_interval(request, rm_ids: List[UUID], actual
 
 
 """ 複数復習管理に最終復習日時を一括して設定 """
-@api.patch("/patch_rm_set__set_last_reviewed_at", response=List[UUID])
+@api.patch("/patch_rm_set__set_last_reviewed_at", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_last_reviewed_at(request, rm_ids: List[UUID], last_reviewed_at: datetime):
     # if not(last_reviewed_at >= 0 and last_reviewed_at <= 36500):
     #     raise ValidationError([{"message":"'last_reviewed_at' should be in the range of 0-36500"}])
@@ -1696,7 +1698,7 @@ def patch_rm_set__set_last_reviewed_at(request, rm_ids: List[UUID], last_reviewe
 
 
 """ 複数復習管理に重要度を一括して設定 """
-@api.patch("/patch_rm_set__set_importance", response=List[UUID])
+@api.patch("/patch_rm_set__set_importance", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_importance(request, rm_ids: List[UUID], importance: int):
     if not(importance >= 0 and importance <= 10):
         raise ValidationError([{"message":"'importance' should be in the range of 0-10"}])
@@ -1707,7 +1709,7 @@ def patch_rm_set__set_importance(request, rm_ids: List[UUID], importance: int):
 
 
 """ 複数復習管理に予想所要時間を一括して設定 """
-@api.patch("/patch_rm_set__set_estimated_time", response=List[UUID])
+@api.patch("/patch_rm_set__set_estimated_time", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_estimated_time(request, rm_ids: List[UUID], estimated_time: timedelta):
     validator = DurationRangeValidator(min_delta=timedelta(days=0), max_delta=timedelta(days=1))
     validate_with_ninja([validator], estimated_time)
@@ -1718,7 +1720,7 @@ def patch_rm_set__set_estimated_time(request, rm_ids: List[UUID], estimated_time
 
 
 """ 複数復習管理に最高定着レベルを一括して設定 """
-@api.patch("/patch_rm_set__set_highest_absorption_level", response=List[UUID])
+@api.patch("/patch_rm_set__set_highest_absorption_level", response=List[UUID], auth=django_auth)
 def patch_rm_set__set_highest_absorption_level(request, rm_ids: List[UUID], highest_absorption_level: int):
     if not(highest_absorption_level >= 0 and highest_absorption_level <= 12):
         raise ValidationError([{"message":"'highest_absorption_level' should be in the range of 0-12"}])
@@ -1729,7 +1731,7 @@ def patch_rm_set__set_highest_absorption_level(request, rm_ids: List[UUID], high
 
 
 """ 復習管理一括削除 """
-@api.delete("/delete_rm_set", response=List[UUID])
+@api.delete("/delete_rm_set", response=List[UUID], auth=django_auth)
 def delete_rm_set(request, rm_ids: List[UUID]):
     rm_set = ReviewManagement.objects.filter(user=request.user, id__in=rm_ids)
     deleted_rm_ids = [p.id for p in rm_set]
@@ -1738,7 +1740,7 @@ def delete_rm_set(request, rm_ids: List[UUID]):
 
 
 """ 判定 """
-@api.post("/judge")
+@api.post("/judge", auth=django_auth)
 def judge(request, judgeRequest: JudgeRequestSchema):
     judges = judgeRequest.judges
     results = []
