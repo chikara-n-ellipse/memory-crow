@@ -153,7 +153,7 @@ var on_judge = (qa_id, judge_type)=>{
         }),
         // dataType: 'json', //データをjson形式で飛ばす
         // contentType: "application/json",
-        beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+        // beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
     })
     .done((data)=> {
         setTimeout(()=>{
@@ -547,7 +547,7 @@ var init_project_select = (dropdown_parent=null,  multiple=false, addtional_filt
             };
           },
           cache: true,
-          beforeSend: ( xhr, settings ) => { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+        //   beforeSend: ( xhr, settings ) => { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
         },
         escapeMarkup: function(markup) {
             return markup;
@@ -622,7 +622,7 @@ var init_tag_select = (dropdown_parent=null, multiple=false, addtional_filters=n
             };
           },
           cache: true,
-          beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+          // beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
         },
         escapeMarkup: function(markup) {
             return markup;
@@ -685,7 +685,7 @@ var init_card_select = (dropdown_parent=null, multiple=false, addtional_filters=
             };
           },
           cache: true,
-          beforeSend: ( xhr, settings ) => { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+        //   beforeSend: ( xhr, settings ) => { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
         },
         escapeMarkup: function(markup) {
             return markup;
@@ -746,7 +746,7 @@ const init_rm_select = (dropdown_parent=null, multiple=false, )=>{
               };
             },
             cache: true,
-            beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+            // beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
         },
     });
 }

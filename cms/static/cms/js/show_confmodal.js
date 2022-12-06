@@ -84,7 +84,7 @@ const show_confmodal = (
             type: method_type,
             url: get_url_from_path_and_queries(url_path, url_queries),
             data: JSON.stringify(data),
-            beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+            // beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
         })
         .done((data)=> {
             //　成功時
@@ -2199,7 +2199,7 @@ const show_tsv_modal = (process_after_result=null,)=>{
                             type: "POST",
                             url: get_url_from_path_and_queries(url_path, url_queries),
                             data: JSON.stringify(data),
-                            beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+                            // beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
                         })
                         .done((data)=> {
                             //　成功時

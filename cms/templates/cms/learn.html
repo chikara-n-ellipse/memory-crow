@@ -511,7 +511,7 @@ const load_qa_set = (additional_filters=null)=>{
     type: 'GET',
     url: get_url_from_path_and_queries(url_path, url_queries),
     contentType: "application/json",
-    beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', 'Bearer {{user.token}}'); },
+    // beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', 'Bearer {{user.token}}'); },
   })
   .done((data)=> {
     rm_set_loaded = data.results;

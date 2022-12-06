@@ -417,7 +417,7 @@ $(()=>{
         type: 'POST',
         url: `/api/update_rm`,
         data: JSON.stringify(data),
-        beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
+        // beforeSend: function( xhr, settings ) { xhr.setRequestHeader( 'Authorization', `Bearer ${token}`); },
     })
     .done((data)=> {
         location = '{% if next %}{{ next | safe }}{% else %}/cms/list_rms/{% endif %}';
