@@ -445,7 +445,7 @@ class ReviewManagement(models.Model):
             validators=[DurationRangeValidator(min_delta=timedelta(days=0), max_delta=timedelta(days=1))],)
     highest_absorption_level = models.PositiveSmallIntegerField('最高定着レベル', default=0,
             validators=[MinValueValidator(0), MaxValueValidator(12)],)
-    postpone_to = models.DateTimeField('延期先日時', default=datetime(2022, 11, 19, 16, 0, 38, 477302))
+    postpone_to = models.DateTimeField('延期先日時', default=timezone.make_aware(datetime(2022, 11, 19, 16, 0, 38, 477302)))
     
     last_updated_at = models.DateTimeField('最終更新日時', auto_now=True)
     created_at = models.DateTimeField('復習管理作成日時', auto_now_add=True)
