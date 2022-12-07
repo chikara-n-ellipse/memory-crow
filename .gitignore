@@ -3,6 +3,7 @@ myenv/
 db.sqlite3
 data.json
 .private.json
+/static
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
