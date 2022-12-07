@@ -49,6 +49,10 @@
             <a class="nav-link" href="{% url 'cms:list_cards'%}">
               <i class="bi bi-card-text me-2"></i>カード</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'cms:list_projects'%}">
+              <i class="bi bi-flag-fill me-2"></i>プロジェクト</a>
+          </li>
           {% endif %}
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
@@ -57,15 +61,11 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdown">
               {% if user.id %}
-              <li class="nav-item">
+              <li class="dropdown-item">
                 <a class="nav-link" href="{% url 'cms:top'%}" title="トップ">
                   <i class="material-icons md-18 me-2" style="position:relative;top:3px">public</i>トップ</a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'cms:list_projects'%}">
-                  <i class="bi bi-flag-fill me-2"></i>プロジェクト</a>
-              </li>
-              <li class="nav-item">
+              <li class="dropdown-item">
                 <a class="nav-link" href="{% url 'cms:list_tags'%}">
                   <i class="bi bi-tag-fill me-2"></i>タグ</a>
               </li>
