@@ -899,14 +899,15 @@ def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
         cards.append(card)
     
     with transaction.atomic():
-        Project.objects.bulk_create(new_projects)
-        ProjectLearningManagement.objects.bulk_create(new_plms)
-        Tag.objects.bulk_create(new_tags)
+        batch_size = 100
+        Project.objects.bulk_create(new_projects, batch_size=batch_size)
+        ProjectLearningManagement.objects.bulk_create(new_plms, batch_size=batch_size)
+        Tag.objects.bulk_create(new_tags, batch_size=batch_size)
 
-        Card.objects.bulk_create(cards)
-        CardField.objects.bulk_create(nfs)
-        QA.objects.bulk_create(qa_list)
-        ReviewManagement.objects.bulk_create(rm_list)
+        Card.objects.bulk_create(cards, batch_size=batch_size)
+        CardField.objects.bulk_create(nfs, batch_size=batch_size)
+        QA.objects.bulk_create(qa_list, batch_size=batch_size)
+        ReviewManagement.objects.bulk_create(rm_list, batch_size=batch_size)
 
         """ tag - card """
         for card_tags_to_add in card_tags_to_add_list:
