@@ -14,7 +14,7 @@ from django.db import transaction
 from cms.validators import name_validators, lang_validator, DurationRangeValidator
 
 from django.db.models import (
-        Q, Count, Case, When, Value, IntegerField, 
+        Q, Count, Case, When, Value, IntegerField, BooleanField, 
         ExpressionWrapper, F, DateTimeField, Subquery,
         DateField, DurationField, Value, CharField, OuterRef,
     )
@@ -1506,6 +1506,10 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
         if 'w' in nhw:
             q_nhw |= Q(absorption_level__gte=1)
         q &= q_nhw
+    
+    """ テンプレートカードを除外"""
+    if not filters.include_template:
+        q &= Q(is_pdt=False)
 
     """ 語句検索 """
     if filters.term:
@@ -1543,7 +1547,6 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
 
     rm_set = (ReviewManagement.objects
                     .annotate(project_is_active=Subquery(plm_set_qs.values('is_active')[:1]))\
-                    .filter(q)
                     .select_related('user', 'qa__card', 'qa__card__project', 'qa__card__user',
                         'qa__question_field', 'qa__answer_field')
                     .annotate(
@@ -1561,19 +1564,16 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
                             When(qa__card__project__isnull=False, qa__card=F('qa__card__project__default_template_card'), then=True),
                             # others
                             default=False,
-                            output_field=IntegerField(max_length=1)
+                            output_field=BooleanField()
                         )
                     )
+                    .filter(q)
                     .order_by(*order_by).distinct()
             )
     
     """ apply additional tag filters """
     for tag_q in tag_queries:
         rm_set = rm_set.filter(tag_q)
-    
-    """ テンプレートカードを除外"""
-    if not filters.include_template:
-        q &= Q(is_pdt=False)
     
     """ 緊急度（urgency）による絞り込み """
     if filters.urgency_gte:
