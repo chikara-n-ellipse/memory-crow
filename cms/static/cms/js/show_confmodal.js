@@ -355,7 +355,7 @@ const show_confmodal__patch_projects__set_parent = (list_id, project_ids, proces
     }
     let is_valid = (url_path, url_queries, data)=>{
         let value = url_queries.parent_id;
-        if(value && !validate_uuid(uuid).result){
+        if(value && !validate_uuid(value).result){
             alert("不正な値です。");
             return false;
         }
