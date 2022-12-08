@@ -1567,6 +1567,12 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
                             output_field=BooleanField()
                         )
                     )
+                    .annotate(
+                        nrd = Cast(
+                            F('last_reviewed_at') + F('actual_review_interval'),
+                            output_field=DateField()
+                        )
+                    )
                     .filter(q)
                     .order_by(*order_by).distinct()
             )
@@ -1576,11 +1582,13 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
         rm_set = rm_set.filter(tag_q)
     
     """ 緊急度（urgency）による絞り込み """
-    if filters.urgency_gte:
-        rm_set = list(filter(lambda c: c.urgency >= filters.urgency_gte, rm_set))
+    if filters.urgency_gte > 0:
+        rm_set = rm_set.filter(nrd__lte=datetime.today())
+        # rm_set = list(filter(lambda c: c.urgency >= filters.urgency_gte, rm_set))
+        # rm_set = list(filter(lambda c: c.urgency >= filters.urgency_gte, rm_set))
 
-    total_count = len(list(rm_set))
-    all_ids = [item.id for item in list(rm_set)]
+    total_count = rm_set.count()
+    all_ids = list(rm_set.values_list('id', flat=True))
     if filters.limit:
         rm_set = rm_set[filters.offset:filters.offset+filters.limit]
     
