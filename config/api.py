@@ -356,7 +356,7 @@ def get_projects(request, filters: FiltersForGetProjectsSchema = Query(...)):
 
 """ プロジェクト一括変更（活動状態をセット） """
 @api.patch("/patch_projects__set_is_active", response=List[UUID], auth=django_auth)
-def patch_projects__set_is_active(request, project_ids: List[str], is_active: bool):
+def patch_projects__set_is_active(request, project_ids: List[UUID], is_active: bool):
     plm_set = ProjectLearningManagement.objects.filter(user=request.user, project__id__in=project_ids)
     plm_set.update(is_active=is_active)
     updated_project_ids = [plm.project.id for plm in plm_set]
@@ -365,7 +365,7 @@ def patch_projects__set_is_active(request, project_ids: List[str], is_active: bo
 
 """ プロジェクト一括変更（スターをセット） """
 @api.patch("/patch_projects__set_star", response=List[UUID], auth=django_auth)
-def patch_projects__set_star(request, project_ids: List[str], star: int):
+def patch_projects__set_star(request, project_ids: List[UUID], star: int):
     plm_set = ProjectLearningManagement.objects.filter(user=request.user, project__id__in=project_ids)
     plm_set.update(star=star)
     updated_project_ids = [plm.project.id for plm in plm_set]
@@ -374,7 +374,7 @@ def patch_projects__set_star(request, project_ids: List[str], star: int):
 
 """ プロジェクト一括変更（公開状態をセット） """
 @api.patch("/patch_projects__set_publicity", response=List[UUID], auth=django_auth)
-def patch_projects__set_publicity(request, project_ids: List[str], publicity: int):
+def patch_projects__set_publicity(request, project_ids: List[UUID], publicity: int):
     projects = Project.objects.filter(user=request.user, id__in=project_ids)
     projects.update(publicity=publicity)
     updated_project_ids = [p.id for p in projects]
@@ -383,7 +383,7 @@ def patch_projects__set_publicity(request, project_ids: List[str], publicity: in
 
 """ プロジェクト一括変更（親プロジェクトをセット） """
 @api.patch("/patch_projects__set_parent", response=List[UUID], auth=django_auth)
-def patch_projects__set_parent(request, project_ids: List[str], parent_id: UUID = None):
+def patch_projects__set_parent(request, project_ids: List[UUID], parent_id: UUID = None):
     projects = Project.objects.filter(user=request.user, id__in=project_ids)
     if parent_id:
         parent_project = get_object_or_404(Project, id=parent_id)
