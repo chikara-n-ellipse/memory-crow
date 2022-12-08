@@ -1007,7 +1007,7 @@ const init_rm_list = (filters) => {
         selected_rm_ids = all_ids;
         grid.forceRender();
         $("#selected_rm_set_summary").text(`選択中: ${state.rowIds.length}`);
-        $("#card_list_container .button_disabled_without_selected").prop("disabled", state.rowIds.length == 0);
+        $("#rm_list_container .button_disabled_without_selected").prop("disabled", state.rowIds.length == 0);
     })
 
     $("#rm_list_container .select_none_button").on('click', ()=>{
@@ -1019,7 +1019,7 @@ const init_rm_list = (filters) => {
         selected_rm_ids = [];
         grid.forceRender();
         $("#selected_rm_set_summary").text(`選択中: ${state.rowIds.length}`);
-        $("#card_list_container .button_disabled_without_selected").prop("disabled", state.rowIds.length == 0);
+        $("#rm_list_container .button_disabled_without_selected").prop("disabled", state.rowIds.length == 0);
     })
 
     const list_container_selector = '#rm_list_container';
