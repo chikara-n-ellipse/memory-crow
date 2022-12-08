@@ -14,11 +14,11 @@ from django.db import transaction
 from cms.validators import name_validators, lang_validator, DurationRangeValidator
 
 from django.db.models import (
-        Q, Count, Case, When, Value, IntegerField, BooleanField, 
+        Q, Count, Case, When, Value, IntegerField, BooleanField, FloatField, 
         ExpressionWrapper, F, DateTimeField, Subquery,
         DateField, DurationField, Value, CharField, OuterRef,
     )
-from django.db.models.functions import Cast, TruncMonth
+from django.db.models.functions import Cast, Now, TruncMonth, TruncDate, ExtractDay
 
 
 from cms.schema import *
@@ -1507,6 +1507,10 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
             q_nhw |= Q(absorption_level__gte=1)
         q &= q_nhw
     
+    """ 緊急度（urgency）による絞り込み """
+    if filters.urgency_gte > 0:
+        q &= Q(ugc__gte=filters.urgency_gte)
+    
     """ テンプレートカードを除外"""
     if not filters.include_template:
         q &= Q(is_pdt=False)
@@ -1573,6 +1577,46 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
                             output_field=DateField()
                         )
                     )
+                    .annotate(
+                        late = Cast(
+                            TruncDate(Now()) - F('nrd'),
+                            output_field=DurationField()
+                        )
+                    )
+                    .annotate(
+                        late_int = Cast(
+                            ExtractDay(F('late')),
+                            output_field=IntegerField()
+                        )
+                    )
+                    .annotate(
+                        ari_int = Cast(
+                            ExtractDay(F('actual_review_interval')),
+                            output_field=IntegerField()
+                        )
+                    )
+                    .annotate(
+                        # form -1.0 to 1.0
+                        la_ratio = Case(
+                            When(ari_int__gt=0, then=ExpressionWrapper(
+                                Value(5.0) * Cast(F('late_int'), FloatField()) / Cast(F('ari_int'), FloatField()),
+                                output_field=FloatField()
+                            )),
+                            default=None
+                        )
+                    )
+                    .annotate(
+                        ugc = Case(
+                            When(la_ratio__lte=Value(-1.0), then=Value(0)),
+                            When(la_ratio__gte=Value(1.0), then=Value(100)),
+                            When(la_ratio__gt=Value(-1.0), la_ratio__lt=Value(1.0), then=ExpressionWrapper(
+                                Value(50) + Value(50) * F('la_ratio'),
+                                output_field=IntegerField()
+                            )),
+                            default=Value(100),
+                            output_field=IntegerField()
+                        )
+                    )
                     .filter(q)
                     .order_by(*order_by).distinct()
             )
@@ -1580,12 +1624,6 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
     """ apply additional tag filters """
     for tag_q in tag_queries:
         rm_set = rm_set.filter(tag_q)
-    
-    """ 緊急度（urgency）による絞り込み """
-    if filters.urgency_gte > 0:
-        rm_set = rm_set.filter(nrd__lte=datetime.today())
-        # rm_set = list(filter(lambda c: c.urgency >= filters.urgency_gte, rm_set))
-        # rm_set = list(filter(lambda c: c.urgency >= filters.urgency_gte, rm_set))
 
     total_count = rm_set.count()
     all_ids = list(rm_set.values_list('id', flat=True))
