@@ -754,8 +754,10 @@ def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
     rm_list = []
     nfs = []
     new_projects = []
+    projects_cache = {}
     new_plms = []
     new_tags = []
+    tags_cache = {}
     card_tags_to_add_list = []
     card_qaoic_depqaoic_list = []
     if len(_cards) > 5000:
@@ -852,24 +854,22 @@ def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
         pn = _card.project_name
         if pn:
             validate_with_ninja(name_validators, pn)
-            """ まず、データベースにないか確認 """
-            project = Project.objects.filter(user=request.user, name=pn).first()
+            if pn in projects_cache:
+                project = projects_cache[pn]
+            else:
+                """ データベースにないか確認 """
+                project = Project.objects.filter(user=request.user, name=pn).first()
             if project is None:
-                """ データベースに同名のものがない場合 """
-                """ このAPI呼び出しにて作成予定でないかを確認 """
-                projects = [p for p in new_projects if p.name == pn]
-                if len(projects) > 0:
-                    project = projects[0]
-                else:
-                    """ 作成予定もない場合、新しく作成予定を追加 """
-                    project = Project()
-                    user_plm = ProjectLearningManagement()
-                    project.user = request.user
-                    project.name = pn
-                    user_plm.user = request.user
-                    user_plm.project = project
-                    new_projects.append(project)
-                    new_plms.append(project)
+                """ キャッシュ・DBいずれにもない場合、新しく作成予定を追加 """
+                project = Project()
+                user_plm = ProjectLearningManagement()
+                project.user = request.user
+                project.name = pn
+                user_plm.user = request.user
+                user_plm.project = project
+                new_projects.append(project)
+                new_plms.append(user_plm)
+            projects_cache[pn] = project
             card.project = project
         
         """ tags """
@@ -878,20 +878,19 @@ def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
             tags_to_add = []
             for tn in tns:
                 validate_with_ninja(name_validators, tn)
-                """ まず、データベースにないか確認 """
-                tag = Tag.objects.filter(user=request.user, name=tn).first()
+
+                if tn in tags_cache:
+                    tag = tags_cache[tn]
+                else:
+                    """ データベースにないか確認 """
+                    tag = Tag.objects.filter(user=request.user, name=tn).first()
                 if tag is None:
-                    """ データベースに同名のものがない場合 """
-                    """ このAPI呼び出しにて作成予定でないかを確認 """
-                    tags = [t for t in new_tags if t.name == tn]
-                    if len(tags) > 0:
-                        tag = tags[0]
-                    else:
-                        """ 作成予定もない場合、新しく作成予定を追加 """
-                        tag = Tag()
-                        tag.user = request.user
-                        tag.name = tn
-                        new_tags.append(tag)
+                    """ キャッシュ・DBいずれにもない場合、新しく作成予定を追加 """
+                    tag = Tag()
+                    tag.user = request.user
+                    tag.name = tn
+                    new_tags.append(tag)
+                tags_cache[tn] = tag
                 tags_to_add.append(tag)
             card_tags_to_add_list.append({
                 "card": card,
@@ -900,13 +899,14 @@ def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
         cards.append(card)
     
     with transaction.atomic():
-        Card.objects.bulk_create(cards)
-        QA.objects.bulk_create(qa_list)
-        ReviewManagement.objects.bulk_create(rm_list)
-        CardField.objects.bulk_create(nfs)
         Project.objects.bulk_create(new_projects)
         ProjectLearningManagement.objects.bulk_create(new_plms)
         Tag.objects.bulk_create(new_tags)
+
+        Card.objects.bulk_create(cards)
+        CardField.objects.bulk_create(nfs)
+        QA.objects.bulk_create(qa_list)
+        ReviewManagement.objects.bulk_create(rm_list)
 
         """ tag - card """
         for card_tags_to_add in card_tags_to_add_list:
