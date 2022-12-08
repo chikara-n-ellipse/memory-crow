@@ -16,7 +16,7 @@ const get_user_columns = (container_id, handle_html=null, on_delete_name="null",
         // RowSelection config
         props: {
           // use the "id" column as the row identifier
-          id: (row) => row.cell(2).data
+          id: (row) => row.cell(1).data
         }
       }
     },
@@ -75,7 +75,7 @@ const get_project_columns = (container_id, handle_html=null, on_delete_name="nul
         // RowSelection config
         props: {
           // use the "id" column as the row identifier
-          id: (row) => row.cell(2).data
+          id: (row) => row.cell(1).data.id
         }
       }
     },
@@ -277,7 +277,7 @@ const get_tag_columns = (container_id, handle_html=null, on_delete_name="null", 
         // RowSelection config
         props: {
           // use the "id" column as the row identifier
-          id: (row) => row.cell(2).data
+          id: (row) => row.cell(1).data.id
         }
       }
     },
@@ -422,7 +422,7 @@ const get_card_columns = (container_id, handle_html=null, on_delete_name="null",
         // RowSelection config
         props: {
           // use the "id" column as the row identifier
-          id: (row) => row.cell(2).data
+          id: (row) => row.cell(1).data.id
         }
       }
     },
@@ -666,7 +666,7 @@ const get_rm_columns = (container_id, handle_html=null, on_delete_name="null", s
         component: gridjs.plugins.selection.RowSelection,
         props: {
           id: (row) => {
-            return row.cells[1].data.id
+            return row.cell(1).data.id
           }
 
         }
