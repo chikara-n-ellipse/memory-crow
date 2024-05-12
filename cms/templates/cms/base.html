@@ -142,10 +142,11 @@
   <!-- datatime picker -->
   <script src="{% static 'cms/js/jquery.datetimepicker.full.js' %}"></script>
 
-  <script src="{% static 'cms/js/my_script.js' %}"></script>
-  <script src="{% static 'cms/js/get_columns.js' %}"></script>
-  <script src="{% static 'cms/js/show_confmodal.js' %}"></script>
-  <script src="{% static 'cms/js/list.js' %}"></script>
+  {% comment %} <script src="{% static 'cms/js/my_script.js' %}"></script> {% endcomment %}
+  <script src="{% url 'cms:my_script'      %}"></script>
+  <script src="{% url 'cms:get_columns'    %}"></script>
+  <script src="{% url 'cms:show_confmodal' %}"></script>
+  <script src="{% url 'cms:process_list'           %}"></script>
 
 <script>
 

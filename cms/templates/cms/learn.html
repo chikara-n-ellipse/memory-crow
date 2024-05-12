@@ -467,8 +467,8 @@ $(()=>{
     with_project_descendants: "{{ lc.with_project_descendants }}",
     tags: tag_ids,
     with_tag_descendants: "{{ lc.with_tag_descendants }}",
-    order_by: ['is_hot', 'absorption_level', 'ingestion_level'],
-    order_dir: ['desc', 'asc', 'asc'],
+    order_by: ['is_hot', 'absorption_level', 'ingestion_level', 'created_at'],
+    order_dir: ['desc', 'asc', 'asc', 'asc'],
 
     // 学習時特有の設定項目
     importance_gte: "{{ lc.importance_gte }}",

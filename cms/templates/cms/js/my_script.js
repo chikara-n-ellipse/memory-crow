@@ -782,11 +782,32 @@ const apply_markdown_config = (mode, target_selector=".md_to_html_target")=>{
                 emoji           : true,
                 taskList        : true,
                 tex             : true,
-
                 autoFocus       : false,
                 theme           : "dark",
                 previewTheme : "dark",
+                // onload : function() {
+                //     // This will be executed after the markdown is rendered
+                //     $("#"+tar.id).find("a").each(function() {
+                //         $(this).attr("target", "_blank");
+                //     });
+                //     console.log("tar.id: "+tar.id);
+                // }
             });
+            // after_text.onload = function() {
+            //     // This will be executed after the markdown is rendered
+            //     $("#"+tar.id).find("a").each(function() {
+            //         $(this).attr("target", "_blank");
+            //     });
+            //     console.log("tar.id: "+tar.id);
+            // }
+
+            // setTimeoutを使って処理を遅らせる
+            setTimeout(function() {
+                // This will be executed after the markdown is rendered
+                $("#"+tar.id).find("a").each(function() {
+                    $(this).attr("target", "_blank");
+                });
+            }, 500);  // 500ミリ秒（0.5秒）遅延させる
         })
     }else if(mode=="source"){
         // マークダウンを消すためにグリッドテーブルを更新
@@ -816,7 +837,7 @@ const read_aloud = (text, lang)=>{
     if ('speechSynthesis' in window) {
         // let text = qa.question_field.content;
         const uttr = new SpeechSynthesisUtterance();
-        uttr.text = text;
+        uttr.text = text.replace(/https?:\/\/\S*/g, "");
         uttr.lang = lang;
        
         // uttr.lang = "ja-JP";

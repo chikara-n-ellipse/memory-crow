@@ -40,5 +40,11 @@ urlpatterns = [
     path('show_rm/<slug:rm_id>/', views.show_rm, name='show_rm'),  # 閲覧
 
     path('learn', views.learn, name='learn'),  # 学習
+
+    # javascript
+    path('js/my_script.js', views.my_script, name='my_script'),
+    path('js/get_columns.js', views.get_columns, name='get_columns'),
+    path('js/show_confmodal.js', views.show_confmodal, name='show_confmodal'),
+    path('js/process_list.js', views.process_list, name='process_list'),
     
 ]

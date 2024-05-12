@@ -79,6 +79,16 @@ def get_order_by_strs(f_order_by, f_order_dir, availables=['created_at', 'id']):
                 _order_by = '-' + _order_by
             additional_order_by.append(_order_by)
     order_by = additional_order_by + order_by
+
+    # 重複除去（左側優先）
+    appeared = set()
+    new_order_by = []
+    for sid in order_by: # sid: signed id
+        uid = sid[1:] if sid[0]=="-" else sid # uid: unsigned id
+        if uid in appeared:
+            continue
+        appeared.add(uid)
+        new_order_by.append(sid)
     return order_by
 
 
@@ -813,7 +823,7 @@ def add_cards_from_tsv(request, input_cards: List[AddCardFromTsvSchema]):
             rm.user = request.user
             rm.qa = qa
 
-            _lra = _qa.user_rm.last_reviewed_at
+            _lra = timezone.make_aware(_qa.user_rm.last_reviewed_at, timezone.get_default_timezone())
             if _lra:
                 if _lra > timezone.now():
                     raise ValidationError([{"message":"Future time is not allowed."}])
@@ -1334,9 +1344,10 @@ def add_rm(request, payload: RmUpdateRequestSchema):
     rm.actual_review_interval = timedelta(days=_rm.actual_review_interval)
 
     if _rm.last_reviewed_at:
-        if _rm.last_reviewed_at > timezone.now():
+        lra = timezone.make_aware(_rm.last_reviewed_at, timezone.get_default_timezone())
+        if lra > timezone.now():
             raise ValidationError([{"message":f'last_reviewed_at is invalid. input: {_rm.last_reviewed_at}'}])
-    rm.last_reviewed_at = _rm.last_reviewed_at
+    rm.last_reviewed_at = lra
 
     rm.postpone_to = _rm.postpone_to
 
@@ -1573,7 +1584,10 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
                     )
                     .annotate(
                         nrd = Cast(
-                            F('last_reviewed_at') + F('actual_review_interval'),
+                            ExpressionWrapper(
+                                F('last_reviewed_at') + F('actual_review_interval') + timedelta(hours=6), 
+                                output_field=DateTimeField()
+                            ),
                             output_field=DateField()
                         )
                     )

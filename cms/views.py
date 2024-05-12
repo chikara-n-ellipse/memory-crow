@@ -18,6 +18,8 @@ from mdeditor.widgets import MDEditorWidget
 
 from django.http import HttpResponseRedirect, HttpResponse, QueryDict, Http404
 
+from django.template.response import TemplateResponse
+
 # 認証用
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -672,3 +674,20 @@ def learn(request):
             tag_ids = tag_ids,
             tags_json = tags_json,
         ))
+
+
+def my_script(request):
+    return TemplateResponse(request, 'cms/js/my_script.js', content_type='application/javascript')
+
+
+def get_columns(request):
+    return TemplateResponse(request, 'cms/js/get_columns.js', content_type='application/javascript')
+
+
+def show_confmodal(request):
+    return TemplateResponse(request, 'cms/js/show_confmodal.js', content_type='application/javascript')
+
+
+def process_list(request):
+    return TemplateResponse(request, 'cms/js/process_list.js', content_type='application/javascript')
+

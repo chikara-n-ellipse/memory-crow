@@ -180,11 +180,23 @@ const init_project_list = (filters)=>{
             server: {
                 url: (prev, _columns) => {
                     if (!_columns.length) return get_url_from_path_and_queries(url_path, url_queries);
-                    
-                    _columns.forEach(_col=>{
-                        url_queries.order_by = columns[_col.index].id ;
-                        url_queries.order_dir = _col.direction === 1 ? 'asc' : 'desc' ;
+                    if(!url_queries.order_by)url_queries.order_by = [];
+                    if(!url_queries.order_dir)url_queries.order_dir = [];
+
+                    // _columnsは押した順なので逆にしてループ
+                    _columns.slice().reverse().forEach(_col=>{
+                        // すでに同じキーがあれば削除
+                        let _i = url_queries.order_by.indexOf(columns[_col.index].id);
+                        if(_i >= 0){
+                            url_queries.order_by.splice(_i, 1);
+                            url_queries.order_dir.splice(_i, 1);
+                        };
+
+                        //新しくキーを一番左に追加
+                        url_queries.order_by.unshift(columns[_col.index].id);
+                        url_queries.order_dir.unshift(_col.direction === 1 ? 'asc' : 'desc');
                     })
+
                     return get_url_from_path_and_queries(url_path, url_queries);
                }
             },
@@ -410,11 +422,21 @@ const init_tag_list = (filters) => {
             server: {
                 url: (prev, _columns) => {
                     if (!_columns.length) return get_url_from_path_and_queries(url_path, url_queries);
-                    
-                    
-                    _columns.forEach(_col=>{
-                        url_queries.order_by = columns[_col.index].id ;
-                        url_queries.order_dir = _col.direction === 1 ? 'asc' : 'desc' ;
+                    if(!url_queries.order_by)url_queries.order_by = [];
+                    if(!url_queries.order_dir)url_queries.order_dir = [];
+
+                    // _columnsは押した順なので逆にしてループ
+                    _columns.slice().reverse().forEach(_col=>{
+                        // すでに同じキーがあれば削除
+                        let _i = url_queries.order_by.indexOf(columns[_col.index].id);
+                        if(_i >= 0){
+                            url_queries.order_by.splice(_i, 1);
+                            url_queries.order_dir.splice(_i, 1);
+                        };
+
+                        //新しくキーを一番左に追加
+                        url_queries.order_by.unshift(columns[_col.index].id);
+                        url_queries.order_dir.unshift(_col.direction === 1 ? 'asc' : 'desc');
                     })
                     return get_url_from_path_and_queries(url_path, url_queries);
                }
@@ -623,7 +645,6 @@ const init_card_list = (filters) => {
         fixedHeader: true,
         height: '70vh',
         width:"100%",
-        sort: true,
         className: {
             td: 'bg-dark text-light',
             // th: 'bg-dark text-light',
@@ -687,11 +708,21 @@ const init_card_list = (filters) => {
             server: {
                 url: (prev, _columns) => {
                     if (!_columns.length) return get_url_from_path_and_queries(url_path, url_queries);
-                    
-                    
-                    _columns.forEach(_col=>{
-                        url_queries.order_by = columns[_col.index].id ;
-                        url_queries.order_dir = _col.direction === 1 ? 'asc' : 'desc' ;
+                    if(!url_queries.order_by)url_queries.order_by = [];
+                    if(!url_queries.order_dir)url_queries.order_dir = [];
+
+                    // _columnsは押した順なので逆にしてループ
+                    _columns.slice().reverse().forEach(_col=>{
+                        // すでに同じキーがあれば削除
+                        let _i = url_queries.order_by.indexOf(columns[_col.index].id);
+                        if(_i >= 0){
+                            url_queries.order_by.splice(_i, 1);
+                            url_queries.order_dir.splice(_i, 1);
+                        };
+
+                        //新しくキーを一番左に追加
+                        url_queries.order_by.unshift(columns[_col.index].id);
+                        url_queries.order_dir.unshift(_col.direction === 1 ? 'asc' : 'desc');
                     })
                     return get_url_from_path_and_queries(url_path, url_queries);
                }
@@ -900,7 +931,6 @@ const init_rm_list = (filters) => {
         fixedHeader: true,
         height: '70vh',
         width:"100%",
-        sort: true,
         className: {
             td: 'bg-dark text-light',
             // th: 'bg-dark text-light',
@@ -969,11 +999,21 @@ const init_rm_list = (filters) => {
                 url: (prev, _columns) => {
                     console.log(_columns)
                     if (!_columns.length) return get_url_from_path_and_queries(url_path, url_queries);
-                    
-                    
-                    _columns.forEach(_col=>{
-                        url_queries.order_by = columns[_col.index].id ;
-                        url_queries.order_dir = _col.direction === 1 ? 'asc' : 'desc' ;
+                    if(!url_queries.order_by)url_queries.order_by = [];
+                    if(!url_queries.order_dir)url_queries.order_dir = [];
+
+                    // _columnsは押した順なので逆にしてループ
+                    _columns.slice().reverse().forEach(_col=>{
+                        // すでに同じキーがあれば削除
+                        let _i = url_queries.order_by.indexOf(columns[_col.index].id);
+                        if(_i >= 0){
+                            url_queries.order_by.splice(_i, 1);
+                            url_queries.order_dir.splice(_i, 1);
+                        };
+
+                        //新しくキーを一番左に追加
+                        url_queries.order_by.unshift(columns[_col.index].id);
+                        url_queries.order_dir.unshift(_col.direction === 1 ? 'asc' : 'desc');
                     })
                     return get_url_from_path_and_queries(url_path, url_queries);
                }

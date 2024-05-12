@@ -211,7 +211,7 @@ const get_project_columns = (container_id, handle_html=null, on_delete_name="nul
       },
     },
     {
-      id: "star",
+      id: "user_plm_star",
       name: handle_html('<div class="colum_name" style="width:3em;">星</div>'),
       formatter: (cell, row) => {
         let n = cell;
