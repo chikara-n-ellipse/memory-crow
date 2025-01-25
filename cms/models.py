@@ -215,17 +215,6 @@ class Tag(models.Model):
         tags = Tag.objects.filter(user=self.user)
         descendants = [tag for tag in tags.all() if self.id != tag.id and self.id in tag.pathlike_ids]
         return descendants
-    
-    # def get_all_descendants(self, start_id=None):
-    #     if start_id is None:
-    #         start_id = self.id
-    #     descendants = Tag.objects.none()
-    #     children = self.child_tags.all()
-    #     descendants |= children
-    #     for child_tag in children.all():
-    #         assert start_id != child_tag.id, f"循環が検知されました。ID: {start_id}"
-    #         descendants |= child_tag.get_all_descendants(start_id)
-    #     return descendants
 
 class Card(models.Model):
     """

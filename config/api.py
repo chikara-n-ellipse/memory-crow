@@ -1181,114 +1181,6 @@ def patch_cards__set_publicity(request, card_ids: List[UUID], publicity: int):
 """
 
 
-""" # 複数復習管理IDを指定して、対応する複数カードにプロジェクトを一括して設定 """
-# @api.patch("/patch_cards__set_project_by_rm_ids", response=List[UUID], auth=django_auth)
-# def patch_cards__set_project_by_rm_ids(request, rm_ids: List[UUID], project_id: UUID=None):
-#     if project_id:
-#         project = get_object_or_404(Project, id=project_id)
-#         if request.user != project.user:
-#             raise ValidationError([{"message":"'need_session' should be one of [0, 1]"}])
-#     else:
-#         project = None
-#     qa_set = qa.objects.filter(user=request.user, id__in=rm_ids)
-    
-
-#     # カードIDの一覧取得（カードTBへの追加アクセスなし）
-#     card_ids = set()
-#     for qa in qa_set.all():
-#         card_ids.add(qa.card_id)
-#     card_ids = list(card_ids)
-
-#     # カードを取得しプロジェクト一括設定
-#     cards = Card.objects.filter(user=request.user, id__in=card_ids)
-#     cards.update(project=project)
-#     card_ids = [card.id for card in cards]
-    
-#     return card_ids
-
-
-# # 複数復習管理IDを指定して、対応する複数カードにタグを一括して追加
-# @api.patch("/patch_cards__add_tags_by_rm_ids", response=List[UUID], auth=django_auth)
-# def patch_cards__add_tags_by_rm_ids(request, rm_ids: List[UUID], tag_ids: List[UUID]):
-#     # 復習管理の取得
-#     qa_set = qa.objects.filter(user=request.user, id__in=rm_ids)
-
-#     # カードIDの一覧取得（カードTBへの追加アクセスなし）
-#     card_ids = set()
-#     for qa in qa_set.all():
-#         card_ids.add(qa.card_id)
-#     card_ids = list(card_ids)
-
-#     # カードの取得
-#     cards = Card.objects.filter(user=request.user, id__in=card_ids)
-
-#     tags = Tag.objects.filter(user=request.user, id__in=tag_ids)
-
-#     if len(tags) == 0:
-#         raise ValidationError([{"message":"'need_session' should be one of [0, 1]"}])
-    
-#     for tag in tags:
-#         tag.cards.add(*cards.all())
-    
-#     card_ids = [card.id for card in cards]
-#     return card_ids
-
-
-# # 複数復習管理IDを指定して、対応する複数カードからタグを一括して除外
-# @api.patch("/patch_cards__remove_tags_by_rm_ids", response=List[UUID], auth=django_auth)
-# def patch_cards__remove_tags_by_rm_ids(request, rm_ids: List[UUID], tag_ids: List[UUID]):
-#     # 復習管理の取得
-#     qa_set = qa.objects.filter(user=request.user, id__in=rm_ids)
-
-#     # カードIDの一覧取得（カードTBへの追加アクセスなし）
-#     card_ids = set()
-#     for qa in qa_set.all():
-#         card_ids.add(qa.card_id)
-#     card_ids = list(card_ids)
-
-#     # カードの取得
-#     cards = Card.objects.filter(user=request.user, id__in=card_ids)
-
-#     tags = Tag.objects.filter(user=request.user, id__in=tag_ids)
-
-#     if len(tags) == 0:
-#         raise ValidationError([{"message":"'need_session' should be one of [0, 1]"}])
-    
-#     for tag in tags:
-#         tag.cards.remove(*cards.all())
-    
-#     card_ids = [card.id for card in cards]
-#     return card_ids
-
-
-# # 複数復習管理IDを指定して、対応する複数カードにタグを一括して設定（既存のタグ除外後）
-# @api.patch("/patch_cards__set_tags_by_rm_ids", response=List[UUID], auth=django_auth)
-# def patch_cards__set_tags_by_rm_ids(request, rm_ids: List[UUID], tag_ids: List[UUID]):
-#     # 復習管理の取得
-#     qa_set = qa.objects.filter(user=request.user, id__in=rm_ids)
-
-#     # カードIDの一覧取得（カードTBへの追加アクセスなし）
-#     card_ids = set()
-#     for qa in qa_set.all():
-#         card_ids.add(qa.card_id)
-#     card_ids = list(card_ids)
-
-#     # カードの取得
-#     cards = Card.objects.filter(user=request.user, id__in=card_ids)
-
-#     tags = Tag.objects.filter(user=request.user, id__in=tag_ids)
-
-#     if len(tags) == 0:
-#         for card in cards:
-#             card.tags.clear()
-#     else:
-#         for card in cards:
-#             card.tags.set(tags.all())
-    
-#     card_ids = [card.id for card in cards]
-#     return card_ids
-
-
 """ カード一括削除 """
 @api.delete("/delete_cards", response=List[UUID], auth=django_auth)
 def delete_cards(request, card_ids: List[UUID]):
@@ -1840,17 +1732,6 @@ def patch_rm_set__set_actual_review_interval(request, rm_ids: List[UUID], actual
     rm_set.update(actual_review_interval=actual_review_interval)
     updated_rm_ids = [rm.id for rm in rm_set]
     return updated_rm_ids
-
-
-""" # 複数復習管理に実際復習間隔を標準復習間隔から一括して自動設定 """
-# @api.patch("/patch_rm_set__set_actual_review_interval_from_standard", response=List[UUID], auth=django_auth)
-# def patch_rm_set__set_actual_review_interval(request, rm_ids: List[UUID], noise_ratio: int):
-#     if not(noise_ratio >= 0 and noise_ratio <= 0.5):
-#         raise ValidationError([{"message":"'noise_ratio' should be in the range of 0-0.5"}])
-#     rm_set = qa.objects.filter(user=request.user, id__in=rm_ids)
-#     rm_set.update(actual_review_interval=F('standard_review_interval'))
-#     updated_rm_ids = [rm.id for rm in rm_set]
-#     return updated_rm_ids
 
 
 """ 複数復習管理に最終復習日時を一括して設定 """
