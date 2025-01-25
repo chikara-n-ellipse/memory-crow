@@ -368,7 +368,7 @@ class RmWithPropertyOutSchema(RmOutSchema):
 class RmRichOutSchema(RmWithPropertyOutSchema):
     user: PublicUserOutSchema
     qa: QaRichOutSchema
-    dependency_rm_set: List[RmOutSchema]
+    dependency_rm_set: List[RmWithPropertyOutSchema]
     is_pdt: bool
 
 

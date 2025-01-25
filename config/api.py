@@ -12,18 +12,20 @@ from uuid import UUID
 from django.utils import timezone
 from django.db import transaction
 from cms.validators import name_validators, lang_validator, DurationRangeValidator
-
 from django.db.models import (
         Q, Count, Case, When, Value, IntegerField, BooleanField, FloatField, 
         ExpressionWrapper, F, DateTimeField, Subquery,
-        DateField, DurationField, Value, CharField, OuterRef,
+        DateField, DurationField, Value, CharField, OuterRef, Prefetch, Exists
     )
 from django.db.models.functions import Cast, Now, TruncMonth, TruncDate, ExtractDay
 
 
 from cms.schema import *
+import logging
 
 User = get_user_model()
+
+logger = logging.getLogger('myapp')
 
 
 class LoginRequiredAuth(HttpBearer):
@@ -1422,8 +1424,7 @@ def get_rm(request, rm_id: UUID):
 """ 復習管理一覧取得 """
 @api.get("/get_rm_set", response=GetqasResponseSchema, auth=django_auth)
 def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
-
-    """ 並べ替え """
+    # 既存の並べ替え処理
     order_by = get_order_by_strs(filters.order_by, filters.order_dir, availables=[
         'qa__card__id',
         'qa__card__project__name',
@@ -1441,72 +1442,61 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
         'postpone_to',
         'is_hot',
         'created_at', 'id'])
-    
-    """ ランダムな順序 """
+
     if filters.random:
         order_by = '?'
-
-    """ フィルターにかかわらず、本人のrmのみに限定 """
+    
+    # 本人のrmのみに限定
     q = Q(user=request.user)
-
-    """ フィルターにかかわらず、本人のカードのrmまたは公開カードのrmのみに限定 """
-    q &= ( Q(qa__card__user=request.user) | Q(qa__card__publicity=1) )
-
-    """ 取得する復習管理IDの直接指定 """
+    q &= (Q(qa__card__user=request.user) | Q(qa__card__publicity=1))
     if filters.includes:
         q &= Q(id__in=filters.includes)
-
-    """ 除外する復習管理IDの直接指定 """
     if filters.excludes:
         q &= ~Q(id__in=filters.excludes)
     
-    """ プロジェクトで絞り込み """
+    # プロジェクトで絞り込み
     if filters.project:
         project = get_object_or_404(Project, id=filters.project)
-        if project.user != request.user and project.publicity!=1:
+        if project.user != request.user and project.publicity != 1:
             raise ValidationError([{"message":"Wrong project id"}])
         project_ids = [project.id]
         if filters.with_project_descendants:
             project_ids += [descendant.id for descendant in project.get_all_descendants()]
         q &= Q(qa__card__project__in=project_ids)
-    
-    """
-    タグで絞り込み。
-    tag指定のクエリを複数ANDで結合すると1枚も取得できなくなる。
-    参考: https://stackoverflow.com/questions/8618068/django-filter-queryset-in-for-every-item-in-list/8637972#8637972
-    """
+
+    # タグで絞り込み
     tag_queries = []
     for f_tag_id in filters.tags:
         tag = get_object_or_404(Tag, id=f_tag_id)
-        if tag.user != request.user and tag.publicity!=1:
+        if tag.user != request.user and tag.publicity != 1:
             raise ValidationError([{"message":"Wrong tag id"}])
         tag_ids = [tag.id]
         if filters.with_tag_descendants:
             tag_ids += [descendant.id for descendant in tag.get_all_descendants()]
         tag_queries.append(Q(qa__card__tags__in=tag_ids))
 
-    """ 重要度で絞り込み """
+    # 重要度で絞り込み
     if filters.importance_gte > 0:
         q &= Q(importance__gte=filters.importance_gte)
-
-    """ 活動状態（アクティブ・凍結中）で絞り込み """
+    
+    # 活動状態で絞り込み
     if filters.activeness == 1:
         q &= Q(is_active=True) & (Q(qa__card__project__isnull=True) | Q(project_is_active=True))
     elif filters.activeness == 2:
         q &= Q(is_active=False)
 
-    """ 依存復習管理が一定レベルに達していないものを除去 """
+    # 依存復習管理が一定レベルに達していないものを除去
     if filters.deprms_al_gte:
         q &= (
-                  Q(dependency_rm_set__isnull=True)
-                | Q(dependency_rm_set__absorption_level__gte=filters.deprms_al_gte)
-            )
-    
-    """ 延期先日時に未到達の復習管理を除外 """
+            Q(dependency_rm_set__isnull=True)
+            | Q(dependency_rm_set__absorption_level__gte=filters.deprms_al_gte)
+        )
+
+    # 延期先日時に未到達の復習管理を除外
     if filters.skip_rm_set_before_postpone_to:
         q &= Q(postpone_to__lte=timezone.now())
 
-    """ 新規・Hot・Warmで絞り込み """
+    # 新規・Hot・Warmで絞り込み
     if filters.new_hot_warm:
         nhw = filters.new_hot_warm.split('-')
         q_nhw = Q()
@@ -1518,20 +1508,17 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
             q_nhw |= Q(absorption_level__gte=1)
         q &= q_nhw
     
-    """ 緊急度（urgency）による絞り込み """
-    if filters.urgency_gte > 0:
-        q &= Q(ugc__gte=filters.urgency_gte)
-    
-    """ テンプレートカードを除外"""
+
+    # テンプレートカードを除外
     if not filters.include_template:
         q &= Q(is_pdt=False)
 
-    """ 語句検索 """
+    # 語句検索
     if filters.term:
         terms = filters.term.split()
         for term in terms:
             q &= (
-                  Q(qa__card__card_fields__name__icontains=term)
+                Q(qa__card__card_fields__name__icontains=term)
                 | Q(qa__card__card_fields__content__icontains=term)
                 | Q(qa__card__supplement_content__icontains=term)
                 | Q(id__icontains=term)
@@ -1560,24 +1547,109 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
     
     plm_set_qs = ProjectLearningManagement.objects.filter(user=request.user, project=OuterRef('qa__card__project'))
 
+    # dependency_rm_setの各要素に対する緊急度計算のアノテーションを行うサブクエリ
+    rm_dep_set_qs = ReviewManagement.objects.annotate(
+        nrd_dep = Cast(
+            ExpressionWrapper(
+                F('last_reviewed_at') + F('actual_review_interval') + timedelta(hours=6),
+                output_field=DateTimeField()
+            ),
+            output_field=DateField()
+        ),
+        late_dep = Cast(
+            TruncDate(Now()) - F('nrd_dep'),
+            output_field=DurationField()
+        ),
+        late_int_dep = Cast(
+            ExtractDay(F('late_dep')),
+            output_field=IntegerField()
+        ),
+        ari_int_dep = Cast(
+            ExtractDay(F('actual_review_interval')),
+            output_field=IntegerField()
+        ),
+        la_ratio_dep = Case(
+            When(ari_int_dep__gt=0, then=ExpressionWrapper(
+                Value(5.0) * Cast(F('late_int_dep'), FloatField()) / Cast(F('ari_int_dep'), FloatField()),
+                output_field=FloatField()
+            )),
+            default=None
+        ),
+        ugc_dep = Case(
+            When(la_ratio_dep__lte=Value(-1.0), then=Value(0)),
+            When(la_ratio_dep__gte=Value(1.0), then=Value(100)),
+            When(la_ratio_dep__gt=Value(-1.0), la_ratio_dep__lt=Value(1.0), then=ExpressionWrapper(
+                Value(50) + Value(50) * F('la_ratio_dep'),
+                output_field=IntegerField()
+            )),
+            default=Value(100),
+            output_field=IntegerField()
+        )
+    ).filter(
+        # 子オブジェクトをフィルタリングするため、ここでは parent_rm の代わりに ReviewManagement の id を参照します。
+        dependency_rm_set__id=OuterRef('pk'),
+        ugc_dep__gte=filters.urgency_gte
+    )
+
+    # 緊急度で絞り込み
+    if filters.urgency_gte > 0:
+        q &= Q(ugc__gte=filters.urgency_gte)
+    
+    # dependency_rm_setの各要素に対する緊急度計算のアノテーションを行うサブクエリ
+    rm_dep_set_qs = ReviewManagement.objects.annotate(
+        # 元の計算ロジックをここに適用する
+        nrd_dep = Cast(
+            ExpressionWrapper(
+                F('last_reviewed_at') + F('actual_review_interval') + timedelta(hours=6),
+                output_field=DateTimeField()
+            ),
+            output_field=DateField()
+        ),
+        late_dep = Cast(
+            TruncDate(Now()) - F('nrd_dep'),
+            output_field=DurationField()
+        ),
+        late_int_dep = Cast(
+            ExtractDay(F('late_dep')),
+            output_field=IntegerField()
+        ),
+        ari_int_dep = Cast(
+            ExtractDay(F('actual_review_interval')),
+            output_field=IntegerField()
+        ),
+        la_ratio_dep = Case(
+            When(ari_int_dep__gt=0, then=ExpressionWrapper(
+                Value(5.0) * Cast(F('late_int_dep'), FloatField()) / Cast(F('ari_int_dep'), FloatField()),
+                output_field=FloatField()
+            )),
+            default=None
+        ),
+        ugc_dep = Case(
+            When(la_ratio_dep__lte=Value(-1.0), then=Value(0)),
+            When(la_ratio_dep__gte=Value(1.0), then=Value(100)),
+            When(la_ratio_dep__gt=Value(-1.0), la_ratio_dep__lt=Value(1.0), then=ExpressionWrapper(
+                Value(50) + Value(50) * F('la_ratio_dep'),
+                output_field=IntegerField()
+            )),
+            default=Value(100),
+            output_field=IntegerField()
+        )
+    )
+
     rm_set = (ReviewManagement.objects
                     .annotate(project_is_active=Subquery(plm_set_qs.values('is_active')[:1]))\
                     .select_related('user', 'qa__card', 'qa__card__project', 'qa__card__user',
                         'qa__question_field', 'qa__answer_field')
                     .annotate(
                         is_hot = Case(
-                            # Hot状態
                             When(absorption_level=Value(0), ingestion_level__gte=Value(1), then=Value(1)),
-                            # その他
                             default=Value(0),
                             output_field=IntegerField(max_length=1)
                         )
                     )
                     .annotate(
                         is_pdt = Case(
-                            # is template
                             When(qa__card__project__isnull=False, qa__card=F('qa__card__project__default_template_card'), then=True),
-                            # others
                             default=False,
                             output_field=BooleanField()
                         )
@@ -1610,7 +1682,6 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
                         )
                     )
                     .annotate(
-                        # form -1.0 to 1.0
                         la_ratio = Case(
                             When(ari_int__gt=0, then=ExpressionWrapper(
                                 Value(5.0) * Cast(F('late_int'), FloatField()) / Cast(F('ari_int'), FloatField()),
@@ -1631,27 +1702,62 @@ def get_rm_set(request, filters: FiltersForGetRmSetSchema = Query(...)):
                             output_field=IntegerField()
                         )
                     )
+                    .prefetch_related(Prefetch('dependency_rm_set', queryset=rm_dep_set_qs, to_attr='annotated_dependency_rm_set'))
                     .filter(q)
                     .order_by(*order_by).distinct()
             )
-    
-    """ apply additional tag filters """
+
+    # apply additional tag filters
     for tag_q in tag_queries:
         rm_set = rm_set.filter(tag_q)
+    
+    
 
-    total_count = rm_set.count()
-    all_ids = list(rm_set.values_list('id', flat=True))
+    # total_count = rm_set.count()
+    # all_ids = list(rm_set.values_list('id', flat=True))
+    # logger.info(all_ids[:10])
+
+    # if filters.limit:
+    #     rm_set = rm_set[filters.offset:filters.offset+filters.limit * 5]
+
+    # dependency_rm_setの各要素にannotateされたurgencyを処理し、条件Aと条件Bを適用
+    if filters.urgency_gte > 0:
+        new_rm_set_filtered = []
+        for rm in list(rm_set):
+            all_dep_rms_valid = True  # 条件Aを満たすかどうかをチェックするフラグ
+            for dep_rm in rm.annotated_dependency_rm_set:
+                # 条件B: 要素のurgencyがfilters.urgency_gte未満かつ、last_reviewed_atが現在時刻より24時間以上前
+                if dep_rm.ugc_dep < filters.urgency_gte and \
+                   (timezone.now() - dep_rm.last_reviewed_at).total_seconds() >= 24 * 3600:
+                    continue  # 条件Bを満たす場合は次の要素をチェック
+                else:
+                    # 条件Bを満たさない要素があれば、この復習管理は条件Aを満たさない
+                    all_dep_rms_valid = False
+                    break
+
+            # 全てのdependency_rm_setの要素が条件Bを満たす場合、条件Aを満たす
+            if all_dep_rms_valid:
+                new_rm_set_filtered.append(rm)
+
+        # 条件Aと条件Bを満たすrmのみを最終的なリストに保持
+        rm_set = new_rm_set_filtered
+    
+    total_count = len(rm_set)
+    all_ids = [rm.id for rm in rm_set]
+    # logger.info(all_ids[:10])
+
     if filters.limit:
         rm_set = rm_set[filters.offset:filters.offset+filters.limit]
     
-    """ safe対応 """
+    # safe対応
     new_rm_set = []
     for rm in list(rm_set):
         rm.set_safe(request.user)
         new_rm_set.append(rm)
     rm_set = new_rm_set
-    
+
     return {"results": list(rm_set), "total_count": total_count, "all_ids": all_ids}
+
 
 
 """ 複数復習管理の一括初期化 """

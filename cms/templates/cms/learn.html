@@ -518,6 +518,8 @@ const load_qa_set = (additional_filters=null)=>{
     total_count = data.total_count;
     all_ids_to_learn = data.all_ids;
 
+    console.log(rm_set_loaded);
+
     update_estimated_remaining_num_label();
 
     rm_set_loaded.forEach(rm=>{
